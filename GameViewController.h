@@ -6,10 +6,19 @@
 //  Copyright (c) 2016 Andrey. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+//#import <Cocoa/Cocoa.h>
+
+
 #import <MetalKit/MTKView.h>
 
-@interface GameViewController : NSViewController<MTKViewDelegate>
+
+#if TARGET_IOS==1
+typedef UIViewController VIEWCONTROLLER;
+#else
+typedef NSViewController VIEWCONTROLLER;
+#endif
+
+@interface GameViewController : VIEWCONTROLLER<MTKViewDelegate>
 
 
 @end

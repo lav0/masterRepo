@@ -8,7 +8,7 @@
 
 #import <MetalKit/MetalKit.h>
 #import "metalGeometryProviderProtocol.h"
-#import "metalViewProjectionProtocol.h"
+//#import "metalViewProjectionProtocol.h"
 
 @interface Renderer : NSObject
 

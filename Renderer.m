@@ -20,8 +20,6 @@
     id<MTLCommandBuffer>        _commandBuffer;
     id<MTLRenderCommandEncoder> _commandEncoder;
     
-    id<metalViewProjectionProtocol> _viewAndProjection;
-    
     MTLRenderPassDescriptor* _renderPass;
 }
 
