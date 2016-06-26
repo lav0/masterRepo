@@ -11,6 +11,7 @@
 #import <simd/simd.h>
 
 #import "metalGPBlueBox.h"
+#import "metalCustomGeometry.h"
 #import "Renderer.h"
 #import "metal3DPosition.h"
 #import "SharedStructures.h"
@@ -25,11 +26,8 @@
     // renderer
     Renderer* _renderer;
     
-    metalGPBlueBox* _box;
-    id<MTLBuffer>   _uniform;
-    
-    metalGPBlueBox* _box0;
-    id<MTLBuffer>   _uniform0;
+    metalCustomGeometry* _grid;
+    metalCustomGeometry* _plane;
     
     Camera          _camera;
     
@@ -65,19 +63,29 @@
 {
     id<MTLDevice> _device = [_renderer getDevice];
     
-    metal3DPosition* position = [[metal3DPosition alloc] initAtPoint:(vector_float3){-2.f, 0.f, 0.f}];
-    metal3DPosition* position0 = [[metal3DPosition alloc] initAtPoint:(vector_float3){2.f, 0.f, 0.f}];
-    [position0 rotateWithAxis:{1.f, 0.f, 0.f} andAngle:0.5];
+//    metal3DPosition* position = [[metal3DPosition alloc] initAtPoint:(vector_float3){-7.f, 0.f, 4.f}];
+//    metal3DPosition* position0 = [[metal3DPosition alloc] initAtPoint:(vector_float3){7.f, 0.f, 4.f}];
+    metal3DPosition* position1 = [[metal3DPosition alloc] initAtPoint:(vector_float3){2.f, 0.f, 0.f}];
+    metal3DPosition* position2 = [[metal3DPosition alloc] initAtPoint:(vector_float3){-2.f, 0.f, 0.f}];
     
-    _box = [[metalGPBlueBox alloc] initWithDevice:_device andPosition:position];
-    _box0 = [[metalGPBlueBox alloc] initWithDevice:_device andPosition:position0];
+//    _box = [[metalGPBlueBox alloc] initWithDevice:_device andPosition:position];
+//    _box0 = [[metalGPBlueBox alloc] initWithDevice:_device andPosition:position0];
+    
+    NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
+    NSURL *planeURL = [[NSBundle mainBundle] URLForResource:@"tr" withExtension:@"obj"];
+    if (gridURL == nil || planeURL == nil)
+        NSLog(@"Sorry. File not found");
+    
+    _grid = [[metalCustomGeometry alloc] initWithDevice:_device andLoadFrom:gridURL];
+    _plane =[[metalCustomGeometry alloc] initWithDevice:_device andLoadFrom:planeURL];
+    
+    [_grid setSpacePosition:position1];
+    [_plane setSpacePosition:position2];
     
     _camera.move( {0.f, 0.f, -5.f} );
     
-    _uniform = [_device newBufferWithLength:sizeof(uniforms_t) options:0];
-    _uniform0 = [_device newBufferWithLength:sizeof(uniforms_t) options:0];
-    
-    [_renderer initPipelineState:[_box vertexDescriptor]];
+    metalGPBlueBox* box = [[metalGPBlueBox alloc] initWithDevice:_device];
+    [_renderer initPipelineState:[box vertexDescriptor]];
 }
 
 - (void)_render
@@ -92,8 +100,8 @@
         // Create a render command encoder so we can render into something
         [_renderer startFrame:renderPassDescriptor];
         
-        [_renderer drawWithGeometry:_box];
-        [_renderer drawWithGeometry:_box0];
+        [_renderer drawWithGeometry:_plane];
+        [_renderer drawWithGeometry:_grid];
         
         [_renderer endFrame:_view.currentDrawable];
     }
@@ -112,12 +120,13 @@
 
 - (void)_update
 {
-    [_box.spacePosition rotateWithAxis:(vector_float3){0.7f, 0.7f, 0.f} andAngle:0.1];
+    [_plane.spacePosition rotateWithAxis:(vector_float3){0.7f, 0.7f, 0.f} andAngle:0.1];
+    [_grid.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
     
     matrix_float4x4 viewProj = matrix_multiply(_projectionMatrix, _camera.get_view_transformation());
     
-    [_box setViewProjection:&viewProj];
-    [_box0 setViewProjection:&viewProj];
+    [_plane setViewProjection:&viewProj];
+    [_grid setViewProjection:&viewProj];
 }
 
 // Called whenever view changes orientation or layout is changed

@@ -23,7 +23,7 @@
 {
     if (self = [super init])
     {
-        MDLMesh *mdl = [MDLMesh newBoxWithDimensions:(vector_float3){2,2,2} segments:(vector_uint3){1,1,1}
+        MDLMesh *mdl = [MDLMesh newBoxWithDimensions:(vector_float3){1.5,1.5,1.5} segments:(vector_uint3){1,1,1}
                                         geometryType:MDLGeometryTypeTriangles inwardNormals:NO
                                            allocator:[[MTKMeshBufferAllocator alloc] initWithDevice:device]];
         

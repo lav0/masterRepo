@@ -23,13 +23,19 @@ typedef struct
     float3 normal [[attribute(1)]];
 } vertex_t;
 
+struct Vertex
+{
+    float3 position;
+    float3 normal;
+};
+
 typedef struct {
     float4 position [[position]];
     half4  color;
 } ColorInOut;
 
 // Vertex shader function
-vertex ColorInOut lighting_vertex(vertex_t vertex_array [[stage_in]],
+vertex ColorInOut lighting_vertex( vertex_t vertex_array [[stage_in]],
                                   constant uniforms_t& uniforms [[ buffer(1) ]])
 {
     ColorInOut out;
