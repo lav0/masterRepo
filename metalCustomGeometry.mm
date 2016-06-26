@@ -10,7 +10,7 @@
 #import "SharedStructures.h"
 #import "OBJModel.h"
 
-typedef uint16 IndexType;
+typedef uint16_t IndexType;
 
 static const float c = 2.f, n = -1.f;
 static const float vertexData[] =
