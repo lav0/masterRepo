@@ -15,6 +15,8 @@
     id <MTLCommandQueue>        _commandQueue;
     id <MTLLibrary>             _defaultLibrary;
     id <MTLRenderPipelineState> _pipelineState;
+    id <MTLRenderPipelineState> _pipelineState0;
+    
     id <MTLDepthStencilState>   _depthState;
     
     id<MTLCommandBuffer>        _commandBuffer;
@@ -28,7 +30,7 @@
     return _device;
 }
 
-- (instancetype)initWithLayer:(CAMetalLayer *)metalLayer
+- (instancetype)init
 {
     if (self = [super init])
     {
@@ -69,6 +71,13 @@
     _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
     if (!_pipelineState) {
         NSLog(@"Failed to created pipeline state, error %@", error);
+    }
+    
+    pipelineStateDescriptor.vertexFunction = [_defaultLibrary newFunctionWithName:@"lighting_vertex0"];
+    pipelineStateDescriptor.fragmentFunction = [_defaultLibrary newFunctionWithName:@"lighting_fragment0"];
+    _pipelineState0 = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
+    if (!_pipelineState0) {
+        NSLog(@"Failed to created second pipeline state, %@", error);
     }
     
     _renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
@@ -114,6 +123,8 @@
                                  indexType:MTLIndexTypeUInt16
                                indexBuffer:[geometryProvider indexBuffer]
                          indexBufferOffset:0];
+    
+    [_commandEncoder setRenderPipelineState:_pipelineState0];
 }
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
@@ -130,6 +141,13 @@
     [_commandBuffer presentDrawable:drawable];
     [_commandBuffer commit];
 
+}
+
+- (void)setTextureBuffer:(id<MTLBuffer>)textureBuffer andTextureData:(id<MTLTexture>)textureData
+{
+    [_commandEncoder setVertexBuffer:textureBuffer offset:0 atIndex:2];
+    [_commandEncoder setFragmentTexture:textureData atIndex:0];
+    
 }
 
 @end

@@ -15,8 +15,18 @@
 #import "Renderer.h"
 #import "metal3DPosition.h"
 #import "SharedStructures.h"
+#import "MBETextureLoader.h"
 
 #include "Camera.hpp"
+
+static const float t = 1.f, s = -0.2f;
+static const float textureArrayData[] =
+{
+    s, s,
+    t - s, s,
+    t - s, t - s,
+    s, t - s
+};
 
 @implementation GameViewController
 {
@@ -28,6 +38,9 @@
     
     metalCustomGeometry* _grid;
     metalCustomGeometry* _plane;
+    
+    id<MTLBuffer>   _textureBuffer;
+    id<MTLTexture>  _textureData;
     
     Camera          _camera;
     
@@ -41,7 +54,7 @@
 {
     [super viewDidLoad];
     
-    _renderer = [[Renderer alloc] initWithLayer:(CAMetalLayer *)self.view.layer];
+    _renderer = [[Renderer alloc] init];
     
     [self _setupView];
     
@@ -86,6 +99,12 @@
     
     metalGPBlueBox* box = [[metalGPBlueBox alloc] initWithDevice:_device];
     [_renderer initPipelineState:[box vertexDescriptor]];
+    
+    _textureBuffer = [_device newBufferWithBytes:textureArrayData
+                                          length:sizeof(textureArrayData)
+                                         options:0];
+    
+    _textureData = [MBETextureLoader texture2DWithImageNamed:@"Image008" device:_device];
 }
 
 - (void)_render
@@ -100,10 +119,16 @@
         // Create a render command encoder so we can render into something
         [_renderer startFrame:renderPassDescriptor];
         
-        [_renderer drawWithGeometry:_plane];
         [_renderer drawWithGeometry:_grid];
         
+        [_renderer setTextureBuffer:_textureBuffer andTextureData:_textureData];
+        [_renderer drawWithGeometry:_plane];
+        
         [_renderer endFrame:_view.currentDrawable];
+        
+        //[_renderer0 startFrame:renderPassDescriptor];
+        
+        //[_renderer0 endFrame:_view.currentDrawable];
     }
     else
     {
@@ -120,7 +145,7 @@
 
 - (void)_update
 {
-    [_plane.spacePosition rotateWithAxis:(vector_float3){0.7f, 0.7f, 0.f} andAngle:0.1];
+    //[_plane.spacePosition rotateWithAxis:(vector_float3){0.7f, 0.7f, 0.f} andAngle:0.1];
     [_grid.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
     
     matrix_float4x4 viewProj = matrix_multiply(_projectionMatrix, _camera.get_view_transformation());

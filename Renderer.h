@@ -12,7 +12,8 @@
 
 @interface Renderer : NSObject
 
-- (instancetype)initWithLayer:(CAMetalLayer *)metalLayer;
+- (instancetype)init;
+
 - (void)initPipelineState:(MTLVertexDescriptor*)vertDesc;
 
 - (id<MTLDevice>)getDevice;
@@ -25,5 +26,9 @@
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider;
 
 - (void)endFrame:(id<CAMetalDrawable>)drawable;
+
+
+
+- (void)setTextureBuffer:(id<MTLBuffer>)textureBuffer andTextureData:(id<MTLTexture>)textureData;
 
 @end
