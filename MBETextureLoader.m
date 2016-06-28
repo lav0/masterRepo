@@ -52,7 +52,7 @@ typedef NSImage THEIMAGE;
 
 + (id<MTLTexture>)texture2DWithImageNamed:(NSString *)imageName device:(id<MTLDevice>)device
 {
-    UIImage *image = [UIImage imageNamed:imageName];
+    THEIMAGE *image = [THEIMAGE imageNamed:imageName];
     
     if (image == nil)
         NSLog(@"Image not found");
