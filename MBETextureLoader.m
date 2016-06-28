@@ -9,13 +9,24 @@
 #import "MBETextureLoader.h"
 #import <MetalKit/MetalKit.h>
 
+
+#if TARGET_IOS==1
+typedef UIImage THEIMAGE;
+#else
+typedef NSImage THEIMAGE;
+#endif
+
 @implementation MBETextureLoader
 
-+ (uint8_t *)dataForImage:(NSImage *)image
++ (uint8_t *)dataForImage:(THEIMAGE *)image
 {
+#if TARGET_IOS==1
+    CGImageRef imageRef = image.CGImage;
+#else
     NSRect nsrect = NSRectFromCGRect(CGRectMake(0, 0, image.size.width, image.size.height));
     CGImageRef imageRef = [image CGImageForProposedRect:&nsrect
                                                 context:nil hints:nil];
+#endif
     
     // Create a suitable bitmap context for extracting the bits of the image
     const NSUInteger width = CGImageGetWidth(imageRef);
@@ -41,7 +52,7 @@
 
 + (id<MTLTexture>)texture2DWithImageNamed:(NSString *)imageName device:(id<MTLDevice>)device
 {
-    NSImage *image = [NSImage imageNamed:imageName];
+    UIImage *image = [UIImage imageNamed:imageName];
     
     if (image == nil)
         NSLog(@"Image not found");
@@ -65,15 +76,5 @@
     return texture;
 }
 
-+ (id<MTLTexture>)textureWithImageNamed:(NSString*)imageName device:(id<MTLDevice>)device
-{
-    NSImage *image = [NSImage imageNamed:imageName];
-    NSRect nsrect = NSRectFromCGRect(CGRectMake(0, 0, image.size.width, image.size.height));
-    CGImageRef imageRef = [image CGImageForProposedRect:&nsrect context:nil hints:nil];
-    
-    MTKTextureLoader *loader = [[MTKTextureLoader alloc] initWithDevice:device];
-    
-    return [loader newTextureWithCGImage:imageRef options:nil error:nil];
-}
 
 @end

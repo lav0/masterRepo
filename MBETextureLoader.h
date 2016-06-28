@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Metal By Example. All rights reserved.
 //
 
-#import <AppKit/AppKit.h>
+//#import <AppKit/AppKit.h>
 
 //#import <UIKit/UIKit.h>
 #import <Metal/Metal.h>
@@ -14,7 +14,5 @@
 @interface MBETextureLoader : NSObject
 
 + (id<MTLTexture>)texture2DWithImageNamed:(NSString *)imageName device:(id<MTLDevice>)device;
-
-+ (id<MTLTexture>)textureWithImageNamed:(NSString*)imageName device:(id<MTLDevice>)device;
 
 @end
