@@ -36,6 +36,7 @@ static const IndexType indexData[] =
 {
     if (self = [super init])
     {
+        _vertexCount   = 3;
         _vertexBuffer  = [device newBufferWithBytes:vertexData length:sizeof(vertexData) options:0];
         _indexBuffer   = [device newBufferWithBytes:indexData length:sizeof(indexData) options:0];
         
@@ -66,8 +67,9 @@ static const IndexType indexData[] =
     
     if (baseGroup)
     {
+        _vertexCount = baseGroup->vertexCount;
         _vertexBuffer = [device newBufferWithBytes:baseGroup->vertices
-                                            length:sizeof(Vertex) * baseGroup->vertexCount
+                                            length:sizeof(Vertex) * _vertexCount
                                            options:0];
         _indexBuffer = [device newBufferWithBytes:baseGroup->indices
                                             length:sizeof(IndexType) * baseGroup->indexCount
@@ -75,8 +77,17 @@ static const IndexType indexData[] =
     }
 }
 
-@synthesize spacePosition = _position;
+@synthesize vertexCount = _vertexCount;
+- (size_t)vertexCount
+{
+    return _vertexCount;
+}
+- (void)setVertexCount:(size_t)vertexCount
+{
+    _vertexCount = vertexCount;
+}
 
+@synthesize spacePosition = _position;
 - (metal3DPosition*)spacePosition
 {
     if (_position == nil)
@@ -86,7 +97,6 @@ static const IndexType indexData[] =
     
     return _position;
 }
-
 - (void)setSpacePosition:(metal3DPosition *)position
 {
     _position = position;

@@ -18,14 +18,21 @@
 #import "MBETextureLoader.h"
 
 #include "Camera.hpp"
+#include <vector>
 
-static const float t = 1.f, s = -0.2f;
-static const float textureArrayData[] =
+static const float t = 1.f, s = 0.f;
+static const simd::float2 textureArrayData[] =
 {
-    s, s,
-    t - s, s,
-    t - s, t - s,
-    s, t - s
+    { s, s },
+    { t - s, s},
+    { t - s, t - s},
+    { s, t - s},
+    
+    {2.f, 0.f},
+    {2.f, 1.f},
+    {2.f, 2.f},
+    {1.f, 2.f},
+    {0.f, 2.f}
 };
 
 @implementation GameViewController
@@ -38,6 +45,9 @@ static const float textureArrayData[] =
     
     metalCustomGeometry* _grid;
     metalCustomGeometry* _plane;
+    
+    metalCustomGeometry* _textured_geometry;
+    metalCustomGeometry* _clear_geoemtry;
     
     id<MTLBuffer>   _textureBuffer;
     id<MTLTexture>  _textureData;
@@ -84,13 +94,16 @@ static const float textureArrayData[] =
 //    _box = [[metalGPBlueBox alloc] initWithDevice:_device andPosition:position];
 //    _box0 = [[metalGPBlueBox alloc] initWithDevice:_device andPosition:position0];
     
-    NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
+    NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"quadro_grid" withExtension:@"obj"];
     NSURL *planeURL = [[NSBundle mainBundle] URLForResource:@"tr" withExtension:@"obj"];
     if (gridURL == nil || planeURL == nil)
         NSLog(@"Sorry. File not found");
     
     _grid = [[metalCustomGeometry alloc] initWithDevice:_device andLoadFrom:gridURL];
     _plane =[[metalCustomGeometry alloc] initWithDevice:_device andLoadFrom:planeURL];
+    
+    _textured_geometry = _grid;
+    _clear_geoemtry = _plane;
     
     [_grid setSpacePosition:position1];
     [_plane setSpacePosition:position2];
@@ -100,11 +113,79 @@ static const float textureArrayData[] =
     metalGPBlueBox* box = [[metalGPBlueBox alloc] initWithDevice:_device];
     [_renderer initPipelineState:[box vertexDescriptor]];
     
-    _textureBuffer = [_device newBufferWithBytes:textureArrayData
-                                          length:sizeof(textureArrayData)
-                                         options:0];
-    
     _textureData = [MBETextureLoader texture2DWithImageNamed:@"Image008" device:_device];
+    
+    [self _generateTextureCoords];
+}
+
+- (void)_transformToTextureCoords:(simd::float4&)vertexBase0
+                            base2:(simd::float4&)vertexBase2
+                   toTextureBase1:(simd::float2&)u0
+                            base2:(simd::float2&)u1
+                           output:(std::vector<simd::float2>&)result
+{
+    //// pick the base points to determine transformation from vectex system to texture one:
+    //// (x,y) -> (u,v)
+    //// vertexBase0 -> u0
+    simd::float2 x0 = { vertexBase0[0], vertexBase0[1] };  // these are (x, y)
+    simd::float2 x1 = { vertexBase2[0], vertexBase2[1] };  // coordinates
+    
+    simd::float2 a = x1 - x0;
+    simd::float2 b = u1 - u0;
+    
+    float angle1 = atan2f(simd::cross(a, b)[2], simd::dot(a, b));
+    
+    simd::float2 c1 = {cosf(angle1), sinf(angle1)};
+    simd::float2 c2 = {-sinf(angle1), cosf(angle1)};
+    simd::float2x2 m = {c1, c2};
+    
+    float a_norm = simd::length(a);
+    float b_norm = simd::length(b);
+    
+    m = m * (b_norm / a_norm);
+    
+    auto f_ = [&m, &x0, &u0](float x, float y)
+    {
+        return u0 + m * ( (simd::float2){x, y} - x0);
+    };
+    
+    simd::float4* v = (simd::float4*) [_textured_geometry.vertexBuffer contents];
+    
+    for (auto i=0; i < 2 * _textured_geometry.vertexCount; i += 2)
+    {
+        simd::float4 point = v[i];
+        simd::float2 coord = f_(point[0], point[1]);
+        
+        result.push_back(coord);
+    }
+}
+
+- (void)_generateTextureCoords
+{
+    std::vector<simd::float2> textureCoords;
+    
+    simd::float4* v = (simd::float4*) [_textured_geometry.vertexBuffer contents];
+    
+    float        scale = 1.f;
+    float        angle = 0.f; // 3.14 / 4.f;
+    simd::float2 shift = {0.f, 0.0f};
+    
+    simd::float2x2 mat ( (simd::float2){cosf(angle), -sinf(angle)}, (simd::float2){sinf(angle), cosf(angle)} );
+    mat = scale * mat;
+    
+    simd::float2 u0 = {0.f, 0.f};  // the texture coordinates
+    simd::float2 u1 = {1.f, 1.f};  // (u, v)
+    
+    [self _transformToTextureCoords:v[4]
+                              base2:v[12]
+                     toTextureBase1:u0
+                              base2:u1
+                             output:textureCoords];
+    
+    _textureBuffer = [_renderer.getDevice newBufferWithBytes:textureCoords.data()
+                                                      length:sizeof(simd::float2) * textureCoords.size()
+                                                     options:0];
+    
 }
 
 - (void)_render
@@ -119,10 +200,10 @@ static const float textureArrayData[] =
         // Create a render command encoder so we can render into something
         [_renderer startFrame:renderPassDescriptor];
         
-        [_renderer drawWithGeometry:_grid];
+        [_renderer drawWithGeometry:_clear_geoemtry];
         
         [_renderer setTextureBuffer:_textureBuffer andTextureData:_textureData];
-        [_renderer drawWithGeometry:_plane];
+        [_renderer drawWithGeometry:_textured_geometry];
         
         [_renderer endFrame:_view.currentDrawable];
         
@@ -146,7 +227,7 @@ static const float textureArrayData[] =
 - (void)_update
 {
     //[_plane.spacePosition rotateWithAxis:(vector_float3){0.7f, 0.7f, 0.f} andAngle:0.1];
-    [_grid.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
+    [_plane.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
     
     matrix_float4x4 viewProj = matrix_multiply(_projectionMatrix, _camera.get_view_transformation());
     

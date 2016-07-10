@@ -12,6 +12,7 @@
 @interface metalCustomGeometry : NSObject<metalGeometryProviderProtocol>
 
 @property (strong, nonatomic) metal3DPosition *spacePosition;
+@property (assign, nonatomic, readonly) size_t vertexCount;
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device;
 - (instancetype)initWithDevice:(id<MTLDevice>)device andLoadFrom:(NSURL*)source;

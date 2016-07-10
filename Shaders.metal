@@ -15,7 +15,7 @@ using namespace metal;
 // Variables in constant address space
 constant float3 light_position = float3(0.0, 1.0, -1.0);
 constant float4 ambient_color  = float4(0.18, 0.24, 0.8, 1.0);
-constant float4 ambient_grey   = float4(0.4, 0.4, 0.4, 1.0);
+constant float4 ambient_skin   = float4(238 / 255.f, 206 / 255.f, 179 / 255.f, 1.0);
 constant float4 diffuse_color  = float4(0.4, 0.4, 1.0, 1.0);
 
 typedef struct
@@ -77,7 +77,7 @@ vertex ColorAndTextureInOut lighting_vertex0(device Vertex*    vertex_array[[ bu
     float n_dot_l = dot(eye_normal.rgb, normalize(light_position));
     n_dot_l = fmax(0.0, n_dot_l);
     
-    out.color = float4(ambient_grey + diffuse_color * n_dot_l);
+    out.color = float4(ambient_skin + diffuse_color * n_dot_l);
     
     out.texture_coord = textureArray[vid].coordinates;
     
