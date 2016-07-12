@@ -164,6 +164,13 @@ static const simd::float2 textureArrayData[] =
 {
     // When reshape is called, update the view and projection matricies since this means the view orientation or size changed
     [self _recalculateProjection];
+    
+    matrix_float4x4 viewProj = matrix_multiply(_projectionMatrix, _camera.get_view_transformation());
+    
+    [_plane setViewProjection:&viewProj];
+    [_grid setViewProjection:&viewProj];
+    [_plane update];
+    [_grid update];
 }
 
 - (void)_recalculateProjection
