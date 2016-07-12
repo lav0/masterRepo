@@ -8,6 +8,7 @@
 
 #import <MetalKit/MetalKit.h>
 #import "metalGeometryProviderProtocol.h"
+#import "metalTextureProviderProtocol.h"
 //#import "metalViewProjectionProtocol.h"
 
 @interface Renderer : NSObject
@@ -25,10 +26,14 @@
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider;
 
+- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
+                 texture:(id<metalTextureProviderProtocol>)textureProvider
+           uniformBuffer:(id<MTLBuffer>)uniformBuffer;
+
+- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
+                 texture:(id<metalTextureProviderProtocol>)textureProvider;
+
 - (void)endFrame:(id<CAMetalDrawable>)drawable;
 
-
-
-- (void)setTextureBuffer:(id<MTLBuffer>)textureBuffer andTextureData:(id<MTLTexture>)textureData;
 
 @end

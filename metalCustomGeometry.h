@@ -17,6 +17,7 @@
 - (instancetype)initWithDevice:(id<MTLDevice>)device;
 - (instancetype)initWithDevice:(id<MTLDevice>)device andLoadFrom:(NSURL*)source;
 
+- (void)update;
 - (void)setViewProjection:(matrix_float4x4*)viewProjection;
 
 @end

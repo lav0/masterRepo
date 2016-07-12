@@ -30,6 +30,8 @@ static const IndexType indexData[] =
     id<MTLBuffer> _vertexBuffer;
     id<MTLBuffer> _uniformBuffer;
     id<MTLBuffer> _indexBuffer;
+    
+    matrix_float4x4 _viewProjectionMatrix;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -122,14 +124,19 @@ static const IndexType indexData[] =
     return _indexBuffer.length / sizeof(IndexType);
 }
 
-- (void)setViewProjection:(matrix_float4x4*)viewProjection
+- (void)update
 {
     uniforms_t *content = (uniforms_t*)[_uniformBuffer contents];
     
     matrix_float4x4 model = [self.spacePosition getTransformation];
     
     content->normal_matrix = matrix_invert(matrix_transpose(model));
-    content->modelview_projection_matrix = matrix_multiply(*viewProjection, model);
+    content->modelview_projection_matrix = matrix_multiply(_viewProjectionMatrix, model);
+}
+
+- (void)setViewProjection:(matrix_float4x4*)viewProjection
+{
+    _viewProjectionMatrix = *viewProjection;
 }
 
 

@@ -132,6 +132,22 @@
     [self drawWithGeometry:geometryProvider uniformBuffer:geometryProvider.uniformBuffer];
 }
 
+- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
+                 texture:(id<metalTextureProviderProtocol>)textureProvider
+           uniformBuffer:(id<MTLBuffer>)uniformBuffer
+{
+    [self setTextureBuffer:textureProvider.bufferCoords andTextureData:textureProvider.dataMipMap];
+    [self drawWithGeometry:geometryProvider uniformBuffer:uniformBuffer];
+}
+
+- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
+                 texture:(id<metalTextureProviderProtocol>)textureProvider
+{
+    [self drawWithGeometry:geometryProvider
+                   texture:textureProvider
+             uniformBuffer:geometryProvider.uniformBuffer];
+}
+
 - (void)endFrame:(id<CAMetalDrawable>)drawable
 {
     [_commandEncoder endEncoding];
