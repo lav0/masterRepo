@@ -15,6 +15,8 @@
 {
     id<MTLBuffer> _bufferCoords;
     id<MTLTexture> _dataMipMap;
+    
+    std::vector<simd::float2*> _textureCoords;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -44,7 +46,6 @@
                             base2:(simd::float4&)vertexBase2
                    toTextureBase1:(simd::float2&)u0
                             base2:(simd::float2&)u1
-                           output:(std::vector<simd::float2>&)result
 {
     //// pick the base points to determine transformation from vectex system to texture one:
     //// (x,y) -> (u,v)
@@ -71,20 +72,28 @@
         return u0 + m * ( (simd::float2){x, y} - x0);
     };
     
-    for (auto point : vertices)
+    for (auto i=0; i<_textureCoords.size(); ++i)
     {
+        simd::float4 point = vertices[i];
         simd::float2 coord = f_(point[0], point[1]);
         
-        result.push_back(coord);
+        *_textureCoords[i] = coord;
     }
 }
 
 - (void)_generateTextureCoords:(std::vector<simd::float4>) vertices
                         device:(id<MTLDevice>) device
 {
-    std::vector<simd::float2> textureCoords;
+    std::vector<simd::float2> textureCoords(vertices.size(), (simd::float2){0.f, 0.f});
     
-    //simd::float4* v = (simd::float4*) [vertexBuffer contents];
+    _bufferCoords = [device newBufferWithBytes:textureCoords.data()
+                                        length:sizeof(simd::float2) * textureCoords.size()
+                                       options:0];
+    
+    simd::float2* content = (simd::float2*) [_bufferCoords contents];
+    for (auto i=0; i<vertices.size(); ++i)
+        _textureCoords.push_back(&content[i]);
+    
     
     float        scale = 1.f;
     float        angle = 0.f; // 3.14 / 4.f;
@@ -96,16 +105,15 @@
     simd::float2 u0 = {0.f, 0.f};  // the texture coordinates
     simd::float2 u1 = {1.f, 1.f};  // (u, v)
     
-    [self _transformToTextureCoords:vertices
-                              base1:vertices[0]
-                              base2:vertices[2]
-                     toTextureBase1:u0
-                              base2:u1
-                             output:textureCoords];
+    simd::float4 tenacity0 = {2.f, 0.f, 0.f, 1.f};
+    simd::float4 tenacity1 = {-0.5f, 0.f, 0.f, 1.f};
     
-    _bufferCoords = [device newBufferWithBytes:textureCoords.data()
-                                        length:sizeof(simd::float2) * textureCoords.size()
-                                       options:0];
+    [self _transformToTextureCoords:vertices
+                              base1:tenacity0
+                              base2:tenacity1
+                     toTextureBase1:u0
+                              base2:u1];
+    
     
 }
 
