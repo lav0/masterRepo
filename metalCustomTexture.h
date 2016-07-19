@@ -17,6 +17,9 @@
                       Vertices:(std::vector<simd::float4>)vertices
                     andPicture:(NSString*)fileName;
 
+- (void)transformTextureAccordingWith:(simd::float4&)vertexBase0
+                                   And:(simd::float4&)vertexBase1;
+
 - (id<MTLBuffer>)bufferCoords;
 - (id<MTLTexture>)dataMipMap;
 

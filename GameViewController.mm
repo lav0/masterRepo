@@ -66,6 +66,8 @@ static const simd::float2 textureArrayData[] =
 {
     [super viewDidLoad];
     
+    _rotation = 0.f;
+    
     _renderer = [[Renderer alloc] init];
     
     [self _setupView];
@@ -184,6 +186,16 @@ static const simd::float2 textureArrayData[] =
     [_plane.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
     
     [_plane update];
+    
+    float tx = cosf(_rotation);
+    float ty = sinf(_rotation);
+    
+    simd::float4 tenacity0 = {1.f + tx, 0.f, 0.f, 1.f};
+    simd::float4 tenacity1 = {tx, ty, 0.f, 1.f};
+    
+    [_textureHandler transformTextureAccordingWith:tenacity0 And:tenacity1];
+    
+    _rotation += 0.01f;
 }
 
 // Called whenever view changes orientation or layout is changed
