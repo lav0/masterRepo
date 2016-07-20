@@ -20,20 +20,6 @@
 #include "Camera.hpp"
 #include <vector>
 
-static const float t = 1.f, s = 0.f;
-static const simd::float2 textureArrayData[] =
-{
-    { s, s },
-    { t - s, s},
-    { t - s, t - s},
-    { s, t - s},
-    
-    {2.f, 0.f},
-    {2.f, 1.f},
-    {2.f, 2.f},
-    {1.f, 2.f},
-    {0.f, 2.f}
-};
 
 @implementation GameViewController
 {
@@ -50,9 +36,6 @@ static const simd::float2 textureArrayData[] =
     metalCustomGeometry* _clear_geoemtry;
     
     metalCustomTexture* _textureHandler;
-    
-    id<MTLBuffer>   _textureBuffer;
-    id<MTLTexture>  _textureData;
     
     Camera          _camera;
     
@@ -111,6 +94,7 @@ static const simd::float2 textureArrayData[] =
     _camera.move( {0.f, 0.f, -5.f} );
     
     metalGPBlueBox* box = [[metalGPBlueBox alloc] initWithDevice:_device];
+    
     [_renderer initPipelineState:[box vertexDescriptor]];
     
     [self _recalculateProjection];
