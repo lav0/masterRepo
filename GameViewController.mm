@@ -10,13 +10,9 @@
 #import <Metal/Metal.h>
 #import <simd/simd.h>
 
+#import "Renderer.h"
 #import "Manager.h"
 #import "metalGPBlueBox.h"
-#import "metalCustomGeometry.h"
-#import "metalCustomTexture.h"
-#import "Renderer.h"
-#import "metal3DPosition.h"
-#import "SharedStructures.h"
 
 #include "Camera.hpp"
 #include <vector>
