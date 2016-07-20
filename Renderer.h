@@ -13,13 +13,13 @@
 
 @interface Renderer : NSObject
 
-- (instancetype)init;
+- (instancetype)initWithView:(MTKView*)view;
 
 - (void)initPipelineState:(MTLVertexDescriptor*)vertDesc;
 
 - (id<MTLDevice>)getDevice;
 
-- (void)startFrame:(MTLRenderPassDescriptor*)passDesc;
+- (void)startFrame;
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
            uniformBuffer:(id<MTLBuffer>)uniformBuffer;
@@ -33,7 +33,7 @@
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
                  texture:(id<metalTextureProviderProtocol>)textureProvider;
 
-- (void)endFrame:(id<CAMetalDrawable>)drawable;
+- (void)endFrame;
 
 
 @end

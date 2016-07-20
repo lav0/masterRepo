@@ -11,6 +11,8 @@
 
 @implementation Renderer
 {
+    MTKView*                _view;
+    
     id <MTLDevice>              _device;
     id <MTLCommandQueue>        _commandQueue;
     id <MTLLibrary>             _defaultLibrary;
@@ -30,7 +32,7 @@
     return _device;
 }
 
-- (instancetype)init
+- (instancetype)initWithView:(MTKView*)view
 {
     if (self = [super init])
     {
@@ -40,6 +42,12 @@
         
         _defaultLibrary = [_device newDefaultLibrary];
         _commandQueue = [_device newCommandQueue];
+        
+        _view = view;
+        
+        _view.device = [self getDevice];
+        
+        _view.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
     }
     
     return self;
@@ -97,10 +105,18 @@
     _depthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
 }
 
-- (void)startFrame:(MTLRenderPassDescriptor*)passDesc
+- (void)startFrame
 {
+    MTLRenderPassDescriptor* renderPassDescriptor = _view.currentRenderPassDescriptor;
+    
+    if(renderPassDescriptor == nil) // If we have a valid drawable, begin the commands to render into it
+    {
+        NSLog(@"Bad renderPassDescriptor/drawable");
+        return;
+    }
+    
     _commandBuffer = [_commandQueue commandBuffer];
-    _commandEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:passDesc];
+    _commandEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
     [_commandEncoder setDepthStencilState:_depthState];
     
     // Set context state
@@ -148,10 +164,11 @@
              uniformBuffer:geometryProvider.uniformBuffer];
 }
 
-- (void)endFrame:(id<CAMetalDrawable>)drawable
+- (void)endFrame
 {
     [_commandEncoder endEncoding];
     
+    id<CAMetalDrawable> drawable = _view.currentDrawable;
     assert(drawable != nil);
     
     [_commandBuffer presentDrawable:drawable];
