@@ -19,10 +19,8 @@
     metalCustomGeometry* _grid;
     metalCustomGeometry* _plane;
     
-    metalCustomGeometry* _textured_geometry;
-    metalCustomGeometry* _clear_geoemtry;
-    
-    metalCustomTexture* _textureHandler;
+    metalCustomTexture* _textureGrid;
+    metalCustomTexture* _texturePlane;
     
     Camera          _camera;
     
@@ -40,15 +38,12 @@
         metal3DPosition* position2 = [[metal3DPosition alloc] initAtPoint:(vector_float3){-2.f, 0.f, 0.f}];
         
         NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"quadro_grid" withExtension:@"obj"];
-        NSURL *planeURL = [[NSBundle mainBundle] URLForResource:@"tr" withExtension:@"obj"];
+        NSURL *planeURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
         if (gridURL == nil || planeURL == nil)
             NSLog(@"Sorry. File not found");
         
         _grid = [[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:gridURL];
         _plane =[[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:planeURL];
-        
-        _textured_geometry = _grid;
-        _clear_geoemtry = _plane;
         
         [_grid setSpacePosition:position1];
         [_plane setSpacePosition:position2];
@@ -56,20 +51,17 @@
         _camera.move( {0.f, 0.f, -5.f} );
         
         // do texture
-        std::vector<simd::float4> purePositions;
-        purePositions.reserve(_textured_geometry.vertexCount);
-        
-        simd::float4* v = (simd::float4*) [_textured_geometry.vertexBuffer contents];
-        
-        for (auto i=0; i < 2 * _textured_geometry.vertexCount; i += 2)
-        {
-            purePositions.push_back(v[i]);
-        }
-        
-        _textureHandler = [[metalCustomTexture alloc] initWithDevice:device
+        auto purePositions = [Manager collectPositionsFrom:_grid];
+        _textureGrid = [[metalCustomTexture alloc] initWithDevice:device
                                                             Vertices:purePositions
                                                           andPicture:@"Image008"];
-        _rotation = 0.f;
+        
+        purePositions = [Manager collectPositionsFrom:_plane];
+        _texturePlane = [[metalCustomTexture alloc] initWithDevice:device
+                                                          Vertices:purePositions
+                                                        andPicture:@"Image008"];
+        
+        _rotation = 0.5f;
     }
     
     return self;
@@ -97,31 +89,61 @@
 - (void)update
 {
     [_plane.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
+    [_grid.spacePosition rotateWithAxis:(vector_float3){0.f, 1.0f, 0.f} andAngle: (int(_rotation) & 1) ? 0.012 : -0.012];
     
     [_plane update];
+    [_grid update];
     
-    float tx = cosf(_rotation);
-    float ty = sinf(_rotation);
+    simd::float4 tenacity0 = {2.f, 0.f, 0.f, 1.f};
+    simd::float4 tenacity1 = {-1.f, 0, 0.f, 1.f};
     
-    simd::float4 tenacity0 = {1.f + tx, 0.f, 0.f, 1.f};
-    simd::float4 tenacity1 = {tx, ty, 0.f, 1.f};
-    
-    [_textureHandler transformTextureAccordingWith:tenacity0 And:tenacity1];
+    [_textureGrid transformTextureAccordingWith:tenacity0 And:tenacity1];
     
     _rotation += 0.01f;
+    
+    Vertex* pVer = [_grid getClosestTo:tenacity0];
+    if (nil != pVer)
+    {
+        pVer->position[2] += 0.01 * sinf(_rotation);
+        simd::float4 p = pVer->position;
+        NSLog(@"%f, %f, %f, %f", p[0], p[1], p[2], p[3]);
+    }
+    else
+    {
+        NSLog(@"OOpsy");
+    }
 }
 
 - (id<metalGeometryProviderProtocol>)getGeometry0
 {
-    return _clear_geoemtry;
+    return _plane;
 }
 - (id<metalGeometryProviderProtocol>)getGeometry1
 {
-    return _textured_geometry;
+    return _grid;
 }
-- (id<metalTextureProviderProtocol>)getTexture;
+- (id<metalTextureProviderProtocol>)getTexture0;
 {
-    return _textureHandler;
+    return _textureGrid;
+}
+- (id<metalTextureProviderProtocol>)getTexture1;
+{
+    return _texturePlane;
+}
+
++ (std::vector<simd::float4>)collectPositionsFrom:(id<metalGeometryProviderProtocol>)provider
+{
+    std::vector<simd::float4> purePositions;
+    purePositions.reserve(provider.vertexCount);
+    
+    simd::float4* v = (simd::float4*) [provider.vertexBuffer contents];
+    
+    for (auto i=0; i < 2 * provider.vertexCount; i += 2)
+    {
+        purePositions.push_back(v[i]);
+    }
+    
+    return purePositions;
 }
 
 @end

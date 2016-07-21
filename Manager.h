@@ -21,6 +21,7 @@
 
 - (id<metalGeometryProviderProtocol>)getGeometry0;
 - (id<metalGeometryProviderProtocol>)getGeometry1;
-- (id<metalTextureProviderProtocol>)getTexture;
+- (id<metalTextureProviderProtocol>)getTexture0;
+- (id<metalTextureProviderProtocol>)getTexture1;
 
 @end

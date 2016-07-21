@@ -8,14 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <simd/simd.h>
-
-struct Vertex
-{
-    simd::float4 position;
-    simd::float4 normal;
-};
-
-typedef uint16_t IndexType;
+#import "SharedStructures.h"
 
 struct OBJGroup
 {

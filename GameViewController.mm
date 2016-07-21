@@ -52,9 +52,9 @@
 
     [_renderer startFrame];
     
-    [_renderer drawWithGeometry:_manager.getGeometry0];
+    [_renderer drawWithGeometry:_manager.getGeometry0 texture:_manager.getTexture1];
     
-    [_renderer drawWithGeometry:_manager.getGeometry1 texture:_manager.getTexture];
+    [_renderer drawWithGeometry:_manager.getGeometry1 texture:_manager.getTexture0];
     
     [_renderer endFrame];
 }

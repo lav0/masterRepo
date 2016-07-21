@@ -7,10 +7,8 @@
 //
 
 #import "metalCustomGeometry.h"
-#import "SharedStructures.h"
 #import "OBJModel.h"
-
-typedef uint16_t IndexType;
+#import "linkedGeometry.hpp"
 
 static const float c = 2.f, n = -1.f;
 static const float vertexData[] =
@@ -32,6 +30,8 @@ static const IndexType indexData[] =
     id<MTLBuffer> _indexBuffer;
     
     matrix_float4x4 _viewProjectionMatrix;
+    
+    linkedGeometry* _linkedGeo;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -39,10 +39,13 @@ static const IndexType indexData[] =
     if (self = [super init])
     {
         _vertexCount   = 3;
+        _indexCount    = 3;
         _vertexBuffer  = [device newBufferWithBytes:vertexData length:sizeof(vertexData) options:0];
         _indexBuffer   = [device newBufferWithBytes:indexData length:sizeof(indexData) options:0];
         
         _uniformBuffer = [device newBufferWithLength:sizeof(uniforms_t) options:0];
+        
+        [self linkGeometryAndBuffers:_vertexCount :_indexCount];
     }
     
     return self;
@@ -56,9 +59,19 @@ static const IndexType indexData[] =
         [self loadModel:device from:source];
         
         _uniformBuffer = [device newBufferWithLength:sizeof(uniforms_t) options:0];
+        
+        [self linkGeometryAndBuffers:_vertexCount :_indexCount];
     }
     
     return self;
+}
+
+- (void)linkGeometryAndBuffers:(size_t)vertCount :(size_t)indCount
+{
+    _linkedGeo = new linkedGeometry(
+                                    (Vertex*)   [_vertexBuffer contents], vertCount,
+                                    (IndexType*)[_indexBuffer contents], indCount
+                                    );
 }
 
 - (void)loadModel:(id<MTLDevice>)device from:(NSURL*)source
@@ -70,13 +83,30 @@ static const IndexType indexData[] =
     if (baseGroup)
     {
         _vertexCount = baseGroup->vertexCount;
+        _indexCount = baseGroup->indexCount;
+        
         _vertexBuffer = [device newBufferWithBytes:baseGroup->vertices
                                             length:sizeof(Vertex) * _vertexCount
                                            options:0];
         _indexBuffer = [device newBufferWithBytes:baseGroup->indices
-                                            length:sizeof(IndexType) * baseGroup->indexCount
+                                            length:sizeof(IndexType) * _indexCount
                                           options:0];
     }
+}
+
+- (void)update
+{
+    uniforms_t *content = (uniforms_t*)[_uniformBuffer contents];
+    
+    matrix_float4x4 model = [self.spacePosition getTransformation];
+    
+    content->normal_matrix = matrix_invert(matrix_transpose(model));
+    content->modelview_projection_matrix = matrix_multiply(_viewProjectionMatrix, model);
+}
+
+- (void)setViewProjection:(matrix_float4x4*)viewProjection
+{
+    _viewProjectionMatrix = *viewProjection;
 }
 
 @synthesize vertexCount = _vertexCount;
@@ -84,9 +114,11 @@ static const IndexType indexData[] =
 {
     return _vertexCount;
 }
-- (void)setVertexCount:(size_t)vertexCount
+
+@synthesize indexCount = _indexCount;
+- (size_t)indexCount
 {
-    _vertexCount = vertexCount;
+    return _indexCount;
 }
 
 @synthesize spacePosition = _position;
@@ -119,24 +151,12 @@ static const IndexType indexData[] =
     return _indexBuffer;
 }
 
-- (size_t)indexCount
+- (Vertex*)getClosestTo:(const simd::float4&)aim
 {
-    return _indexBuffer.length / sizeof(IndexType);
-}
-
-- (void)update
-{
-    uniforms_t *content = (uniforms_t*)[_uniformBuffer contents];
+    if (nullptr != _linkedGeo)
+        return _linkedGeo->getClosestTo(aim);
     
-    matrix_float4x4 model = [self.spacePosition getTransformation];
-    
-    content->normal_matrix = matrix_invert(matrix_transpose(model));
-    content->modelview_projection_matrix = matrix_multiply(_viewProjectionMatrix, model);
-}
-
-- (void)setViewProjection:(matrix_float4x4*)viewProjection
-{
-    _viewProjectionMatrix = *viewProjection;
+    return nullptr;
 }
 
 

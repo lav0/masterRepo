@@ -91,6 +91,11 @@
     return _boxMesh.submeshes[0].indexCount;
 }
 
+- (size_t)vertexCount
+{
+    return _boxMesh.vertexCount;
+}
+
 - (void)setViewProjection:(matrix_float4x4*)viewProjection
 {
     uniforms_t *content = (uniforms_t*)[_uniformBuffer contents];

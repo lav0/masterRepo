@@ -13,6 +13,7 @@
 - (id<MTLBuffer>)vertexBuffer;
 - (id<MTLBuffer>)indexBuffer;
 - (id<MTLBuffer>)uniformBuffer;
+- (size_t)vertexCount;
 - (size_t)indexCount;
 
 @end

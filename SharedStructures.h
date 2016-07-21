@@ -9,7 +9,15 @@
 #ifndef SharedStructures_h
 #define SharedStructures_h
 
-#include <simd/simd.h>
+#import <simd/simd.h>
+
+struct Vertex
+{
+    vector_float4 position;
+    vector_float4 normal;
+};
+
+typedef uint16_t IndexType;
 
 typedef struct __attribute__((__aligned__(256)))
 {

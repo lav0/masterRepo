@@ -121,7 +121,7 @@
     
     // Set context state
     [_commandEncoder pushDebugGroup:@"DrawCube"];
-    [_commandEncoder setRenderPipelineState:_pipelineState];
+    [_commandEncoder setRenderPipelineState:_pipelineState0];
 }
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
@@ -140,7 +140,7 @@
                                indexBuffer:[geometryProvider indexBuffer]
                          indexBufferOffset:0];
     
-    [_commandEncoder setRenderPipelineState:_pipelineState0];
+    //[_commandEncoder setRenderPipelineState:_pipelineState0];
 }
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
