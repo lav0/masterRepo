@@ -16,55 +16,67 @@
 
 @implementation Manager
 {
-    metalCustomGeometry* _grid;
-    metalCustomGeometry* _plane;
-    
-    metalCustomTexture* _textureGrid;
-    metalCustomTexture* _texturePlane;
+    NSMutableArray* _geometriesArray;
+    NSMutableArray* _texturesArray;
     
     Camera          _camera;
     
     matrix_float4x4 _projectionMatrix;
     
     float _rotation;
+    unsigned int _nextGeometryIndex;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
 {
     if (self = [super init])
     {
-        // do geometry
-        metal3DPosition* position1 = [[metal3DPosition alloc] initAtPoint:(vector_float3){2.f, 0.f, 0.f}];
-        metal3DPosition* position2 = [[metal3DPosition alloc] initAtPoint:(vector_float3){-2.f, 0.f, 0.f}];
-        
-        NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"quadro_grid" withExtension:@"obj"];
-        NSURL *planeURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
-        if (gridURL == nil || planeURL == nil)
-            NSLog(@"Sorry. File not found");
-        
-        _grid = [[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:gridURL];
-        _plane =[[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:planeURL];
-        
-        [_grid setSpacePosition:position1];
-        [_plane setSpacePosition:position2];
+        _geometriesArray = [[NSMutableArray alloc] init];
+        _texturesArray   = [[NSMutableArray alloc] init];
         
         _camera.move( {0.f, 0.f, -5.f} );
         
-        // do texture
-        auto purePositions = [Manager collectPositionsFrom:_grid];
-        _textureGrid = [[metalCustomTexture alloc] initWithDevice:device
-                                                            Vertices:purePositions
-                                                          andPicture:@"Image008"];
-        
-        purePositions = [Manager collectPositionsFrom:_plane];
-        _texturePlane = [[metalCustomTexture alloc] initWithDevice:device
-                                                          Vertices:purePositions
-                                                        andPicture:@"Image008"];
-        
         _rotation = 0.5f;
+        _nextGeometryIndex = 0;
+        
+        [self createGeometry:device];
+        [self createTexture:device];
     }
     
     return self;
+}
+
+- (void)createGeometry:(id<MTLDevice>)device
+{
+    metal3DPosition* position1 = [[metal3DPosition alloc] initAtPoint:(vector_float3){2.f, 0.f, 0.f}];
+    metal3DPosition* position2 = [[metal3DPosition alloc] initAtPoint:(vector_float3){-2.f, 0.f, 0.f}];
+    
+    NSURL *quadroURL = [[NSBundle mainBundle] URLForResource:@"quadro_grid" withExtension:@"obj"];
+    NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
+    if (quadroURL == nil || gridURL == nil)
+        NSLog(@"Sorry. File not found");
+    
+    metalCustomGeometry* g1 = [[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:quadroURL];
+    metalCustomGeometry* g2 =[[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:gridURL];
+    
+    [g1 setSpacePosition:position1];
+    [g2 setSpacePosition:position2];
+    
+    [_geometriesArray addObject:g1];
+    [_geometriesArray addObject:g2];
+}
+
+- (void)createTexture:(id<MTLDevice>)device
+{
+    for (metalCustomGeometry* g in _geometriesArray)
+    {
+        auto purePositions = [Manager collectPositionsFrom:g];
+        metalCustomTexture* t = [[metalCustomTexture alloc] initWithDevice:device
+                                                                  Vertices:purePositions
+                                                                andPicture:@"Image008"];
+        
+        [_texturesArray addObject:t];
+    }
 }
 
 - (void)recalculateProjectionWithWidth:(CGFloat)width AndHeight:(CGFloat)height
@@ -79,29 +91,33 @@
 {
     matrix_float4x4 viewProj = matrix_multiply(_projectionMatrix, _camera.get_view_transformation());
     
-    [_plane setViewProjection:&viewProj];
-    [_grid setViewProjection:&viewProj];
-    
-    [_plane update];
-    [_grid update];
+    for (metalCustomGeometry* g in _geometriesArray)
+    {
+        [g setViewProjection:&viewProj];
+        [g update];
+    }
 }
 
 - (void)update
 {
-    [_plane.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
-    [_grid.spacePosition rotateWithAxis:(vector_float3){0.f, 1.0f, 0.f} andAngle: (int(_rotation) & 1) ? 0.012 : -0.012];
+    metalCustomGeometry* plane = [_geometriesArray objectAtIndex:1];
+    metalCustomGeometry* grid = [_geometriesArray objectAtIndex:0];
     
-    [_plane update];
-    [_grid update];
+    [plane.spacePosition rotateWithAxis:(vector_float3){0.f, 0.0f, 1.f} andAngle:0.02];
+    [grid.spacePosition rotateWithAxis:(vector_float3){0.f, 1.0f, 0.f} andAngle: (int(_rotation) & 1) ? 0.012 : -0.012];
+    
+    
+    [plane update];
+    [grid update];
     
     simd::float4 tenacity0 = {2.f, 0.f, 0.f, 1.f};
     simd::float4 tenacity1 = {-1.f, 0, 0.f, 1.f};
     
-    [_textureGrid transformTextureAccordingWith:tenacity0 And:tenacity1];
+    [[_texturesArray objectAtIndex:0] transformTextureAccordingWith:tenacity0 And:tenacity1];
     
     _rotation += 0.01f;
     
-    Vertex* pVer = [_grid getClosestTo:tenacity0];
+    Vertex* pVer = [grid getClosestTo:tenacity0];
     if (nil != pVer)
     {
         pVer->position[2] += 0.01 * sinf(_rotation);
@@ -114,21 +130,24 @@
     }
 }
 
-- (id<metalGeometryProviderProtocol>)getGeometry0
+- (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry
+             andTexture:(id<metalTextureProviderProtocol>*)texture
 {
-    return _plane;
-}
-- (id<metalGeometryProviderProtocol>)getGeometry1
-{
-    return _grid;
-}
-- (id<metalTextureProviderProtocol>)getTexture0;
-{
-    return _textureGrid;
-}
-- (id<metalTextureProviderProtocol>)getTexture1;
-{
-    return _texturePlane;
+    assert([_geometriesArray count] == [_texturesArray count]);
+    
+    if (_nextGeometryIndex >= [_geometriesArray count])
+    {
+        _nextGeometryIndex = 0;
+        
+        return NO;
+    }
+    
+    *geometry = [_geometriesArray objectAtIndex:_nextGeometryIndex];
+    *texture  = [_texturesArray objectAtIndex:_nextGeometryIndex];
+    
+    ++_nextGeometryIndex;
+    
+    return YES;
 }
 
 + (std::vector<simd::float4>)collectPositionsFrom:(id<metalGeometryProviderProtocol>)provider

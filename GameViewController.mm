@@ -52,9 +52,11 @@
 
     [_renderer startFrame];
     
-    [_renderer drawWithGeometry:_manager.getGeometry0 texture:_manager.getTexture1];
+    id<metalGeometryProviderProtocol> g;
+    id<metalTextureProviderProtocol> t;
     
-    [_renderer drawWithGeometry:_manager.getGeometry1 texture:_manager.getTexture0];
+    while ([_manager getNextGeometry:&g andTexture:&t])
+        [_renderer drawWithGeometry:g texture:t];
     
     [_renderer endFrame];
 }

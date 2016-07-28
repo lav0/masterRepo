@@ -19,9 +19,7 @@
 
 - (void)update;
 
-- (id<metalGeometryProviderProtocol>)getGeometry0;
-- (id<metalGeometryProviderProtocol>)getGeometry1;
-- (id<metalTextureProviderProtocol>)getTexture0;
-- (id<metalTextureProviderProtocol>)getTexture1;
+- (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry
+             andTexture:(id<metalTextureProviderProtocol>*)texture;
 
 @end
