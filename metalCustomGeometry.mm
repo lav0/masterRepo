@@ -10,7 +10,7 @@
 #import "OBJModel.h"
 #import "linkedGeometry.hpp"
 
-static const float c = 2.f, n = -1.f;
+static const float c = 1.f, n = -1.f;
 static const float vertexData[] =
 {
     c, 0.f, 0.f, 1.f,   0.f, 0.f, n, 0.f,
@@ -157,6 +157,14 @@ static const IndexType indexData[] =
         return _linkedGeo->getClosestTo(aim);
     
     return nullptr;
+}
+- (BOOL)touchedWithRayOrigin:(const rcbVector3D&)ray_origin
+                andDirection:(const rcbUnitVector3D&)direction
+{
+    auto trs = [self.spacePosition getTransformation];
+    _linkedGeo->updateModelTransformation(&trs);
+    
+    return _linkedGeo->isIntersectedWithRay(ray_origin, direction);
 }
 
 

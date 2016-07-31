@@ -46,3 +46,8 @@ const matrix_float4x4& Camera::get_view_transformation()
     
     return m_view_transformation;
 }
+
+const vector_float3& Camera::get_position() const
+{
+    return m_position;
+}

@@ -17,6 +17,8 @@
 
 - (void)recalculateProjectionWithWidth:(CGFloat)width AndHeight:(CGFloat)height;
 
+- (void)handleMouseTouch:(float)x And:(float)y;
+
 - (void)update;
 
 - (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry

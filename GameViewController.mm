@@ -15,6 +15,7 @@
 #import "metalGPBlueBox.h"
 
 #include "Camera.hpp"
+
 #include <vector>
 
 
@@ -45,6 +46,20 @@
     [self _reshape];
 }
 
+- (void)mouseUp:(NSEvent *)theEvent
+{
+    CGFloat wdev2  = self.view.bounds.size.width / 2;
+    CGFloat hdev2 = self.view.bounds.size.height / 2;
+    
+    NSPoint point = [theEvent locationInWindow];
+  //  NSLog(@"location in window: %f, %f", point.x, point.y);
+    
+    float x = (point.x - wdev2) / wdev2;
+    float y = (point.y - hdev2) / hdev2;
+    
+    [_manager handleMouseTouch:x And:y];
+}
+
 
 - (void)_render
 {
@@ -56,7 +71,9 @@
     id<metalTextureProviderProtocol> t;
     
     while ([_manager getNextGeometry:&g andTexture:&t])
+    {
         [_renderer drawWithGeometry:g texture:t];
+    }
     
     [_renderer endFrame];
 }

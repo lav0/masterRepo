@@ -10,6 +10,8 @@
 #import "metalGeometryProviderProtocol.h"
 #import "metal3DPosition.h"
 
+#include "external/rcbUnitVector3D.h"
+
 @interface metalCustomGeometry : NSObject<metalGeometryProviderProtocol>
 
 @property (strong, nonatomic) metal3DPosition *spacePosition;
@@ -21,6 +23,9 @@
 
 - (void)update;
 - (void)setViewProjection:(matrix_float4x4*)viewProjection;
+
+- (BOOL)touchedWithRayOrigin:(const rcbVector3D&)ray_origin
+                andDirection:(const rcbUnitVector3D&)direction;
 
 - (Vertex*)getClosestTo:(const simd::float4&)aim;
 

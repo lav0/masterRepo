@@ -22,6 +22,7 @@ public:
     
     void move(const vector_float3& shift);
     
+    const vector_float3&   get_position() const;
     const matrix_float4x4& get_view_transformation();
     
 private:
@@ -32,7 +33,7 @@ private:
     
     vector_float3 m_position    = {0.f, 0.f, 0.f};
     vector_float3 m_direction   = {0.f, 0.f, 1.f};
-    vector_float3 m_orientation = {0.f, 1.f, 0.f}; // up direction
+    vector_float3 m_orientation = {0.f, 1.f, 0.f}; // up-of-camera direction
     
     matrix_float4x4 m_view_transformation     = matrix_identity_float4x4;
     bool            m_recalculate_view_needed = true;
