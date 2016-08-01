@@ -55,6 +55,8 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
     metal3DPosition* position1 = [[metal3DPosition alloc] initAtPoint:(vector_float3){2.f, 0.f, 0.f}];
     metal3DPosition* position2 = [[metal3DPosition alloc] initAtPoint:(vector_float3){-2.f, 0.f, 0.f}];
     
+    [position1 rotateWithAxis:{0.f, 1.f, 0.f} andAngle:0.9];
+    
     NSURL *quadroURL = [[NSBundle mainBundle] URLForResource:@"quadro_grid" withExtension:@"obj"];
     NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
     if (quadroURL == nil || gridURL == nil)

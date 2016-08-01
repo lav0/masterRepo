@@ -11,32 +11,8 @@
 
 #include <stdio.h>
 #include <vector>
-#include <cassert>
-#include "SharedStructures.h"
+#include "linkedTriangle.hpp"
 
-#include "external/rcbPlane.h"
-
-class linkedTriangle
-{
-public:
-    linkedTriangle(Vertex* p0, Vertex* p1, Vertex* p2);
-    
-    bool getVertexPosition(unsigned index, simd::float4& output) const;
-    bool getVertexPositionTransformed(unsigned index, simd::float4& output) const;
-    
-    void updateModelTransformation(matrix_float4x4* trs);
-    
-    rcbUnitVector3D normal() const;
-    rcbVector3D     getRcbVertex(unsigned index) const;
-    rcbPlane        getRcbPlane() const;
-    
-private:
-    Vertex* p_v0;
-    Vertex* p_v1;
-    Vertex* p_v2;
-    
-    matrix_float4x4* m_pModel_transformation = nullptr;
-};
 
 class linkedGeometry
 {
