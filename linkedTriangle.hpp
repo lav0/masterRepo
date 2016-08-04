@@ -16,6 +16,17 @@
 #include "external/rcbPlane.h"
 
 
+bool isPointInsideTriangle_bySquares(const vector_float4& a,
+                                     const vector_float4& b,
+                                     const vector_float4& c,
+                                     const vector_float3& point
+                                     );
+bool isPointInsideTriangle_byBarycentre(const vector_float4& a,
+                                        const vector_float4& b,
+                                        const vector_float4& c,
+                                        const vector_float3& point
+                                        );
+
 class linkedTriangle
 {
 public:
@@ -29,6 +40,8 @@ public:
     rcbUnitVector3D normal() const;
     rcbVector3D     getRcbVertex(unsigned index) const;
     rcbPlane        getRcbPlane() const;
+    
+    bool isIntersectedByLine(const rcbLine3D& line) const;
     
 private:
     Vertex* p_v0;

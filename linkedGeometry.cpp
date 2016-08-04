@@ -72,46 +72,12 @@ bool linkedGeometry::isIntersectedWithRay(const rcbVector3D&     ray_origin,
     assert(!m_faces.empty());
     
     rcbLine3D ray_line(ray_origin, ray_origin + ray_direction);
-    
-    auto triangleArea = [](float l1, float l2, float l3)
-    {
-        auto pd2 = (l1 + l2 + l3) / 2;
         
-        return sqrtf( (pd2 - l1) * (pd2 - l2) * (pd2 - l3) * pd2 );
-    };
-    
     for (auto face : m_faces)
     {
-        auto plane = face.getRcbPlane();
-        
-        rcbVector3D intersection;
-        if (plane.intersection(ray_line, intersection))
+        if (face.isIntersectedByLine(ray_line))
         {
-            //
-            // now, let's try to check if intersection is inside the triangle
-            //
-            
-            auto a = face.getRcbVertex(0);
-            auto b = face.getRcbVertex(1);
-            auto c = face.getRcbVertex(2);
-            
-            auto ab = (a - b).norm(); // 1 "sqrt" + 3 "*" + 5 "+"
-            auto bc = (b - c).norm();
-            auto ca = (c - a).norm();
-            
-            auto ai = (a - intersection).norm();
-            auto bi = (b - intersection).norm();
-            auto ci = (c - intersection).norm();
-            
-            auto face_area = triangleArea(ab, bc, ca);
-            auto combined_area = triangleArea(ab, ai, bi) +
-                                 triangleArea(bc, bi, ci) +
-                                 triangleArea(ca, ci, ai);
-            
-            if (fabs(face_area - combined_area) < 0.01)
-            {
-                return true;
-            }
+            return true;
         }
     }
     

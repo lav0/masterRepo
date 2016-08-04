@@ -30,3 +30,4 @@
 - (Vertex*)getClosestTo:(const simd::float4&)aim;
 
 @end
+

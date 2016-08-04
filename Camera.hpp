@@ -23,6 +23,8 @@ public:
     void move(const vector_float3& shift);
     
     const vector_float3&   get_position() const;
+    const vector_float3&   get_view_direction() const;
+    const vector_float3&   get_up_direction() const;
     const matrix_float4x4& get_view_transformation();
     
 private:

@@ -24,7 +24,7 @@ typedef struct
     float3 normal [[attribute(1)]];
 } vertex_t;
 
-struct Vertex
+struct VertexPosNormal
 {
     float4 position;
     float4 normal;
@@ -63,7 +63,7 @@ vertex ColorInOut lighting_vertex( vertex_t vertex_array [[stage_in]],
     return out;
 }
 
-vertex ColorAndTextureInOut lighting_vertex0(device Vertex*    vertex_array[[ buffer(0) ]],
+vertex ColorAndTextureInOut lighting_vertex0(device VertexPosNormal*    vertex_array[[ buffer(0) ]],
                                              constant uniforms_t& uniforms [[ buffer(1) ]],
                                              device TextureIn* textureArray[[ buffer(2) ]],
                                              unsigned int      vid         [[ vertex_id ]])

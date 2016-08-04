@@ -33,7 +33,7 @@ bool Camera::recalculate_view_transformation()
     if (!m_recalculate_view_needed)
         return false;
     
-    m_view_transformation = matrix_look_at(m_position, m_direction, m_orientation);
+    m_view_transformation = matrix_look_along(m_position, m_direction, m_orientation);
     
     m_recalculate_view_needed = false;
     
@@ -50,4 +50,13 @@ const matrix_float4x4& Camera::get_view_transformation()
 const vector_float3& Camera::get_position() const
 {
     return m_position;
+}
+
+const vector_float3& Camera::get_view_direction() const
+{
+    return m_direction;
+}
+const vector_float3& Camera::get_up_direction() const
+{
+    return m_orientation;
 }

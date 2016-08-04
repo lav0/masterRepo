@@ -29,11 +29,10 @@ static matrix_float4x4 matrix_from_perspective_fov_aspectLH(const float fovY,
     return m;
 }
 
-static matrix_float4x4 matrix_look_at(const vector_float3 eye,
-                                      const vector_float3 target,
-                                      const vector_float3 up)
+static matrix_float4x4 matrix_look_along(const vector_float3 eye,
+                                         const vector_float3 direction,
+                                         const vector_float3 up)
 {
-    vector_float3 direction = target - eye;
     vector_float3 R2 = vector_normalize(direction);
     
     vector_float3 R0 = vector_cross(up, direction);
@@ -63,6 +62,15 @@ static matrix_float4x4 matrix_look_at(const vector_float3 eye,
     };
     
     return matrix_transpose(m);
+}
+
+static matrix_float4x4 matrix_look_at(const vector_float3 eye,
+                                      const vector_float3 target,
+                                      const vector_float3 up)
+{
+    vector_float3 direction = target - eye;
+    
+    return matrix_look_along(eye, direction, up);
 }
 
 static matrix_float4x4 matrix_from_translation(float x, float y, float z)
