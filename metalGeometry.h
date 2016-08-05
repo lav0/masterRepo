@@ -7,11 +7,3 @@
 //
 
 #import <Metal/Metal.h>
-
-@interface metalGeometry : NSObject
-
-@property (nonatomic, strong) id<MTLBuffer> vertexBuffer;
-@property (nonatomic, strong) id<MTLBuffer> indexBuffer;
-@property (nonatomic)         size_t*       indexCount;
-
-@end

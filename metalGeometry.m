@@ -7,7 +7,3 @@
 //
 
 #import "metalGeometry.h"
-
-@implementation metalGeometry
-
-@end

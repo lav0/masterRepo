@@ -30,14 +30,16 @@
 {
     [super viewDidLoad];
     
+    mainViewIOS* main_view = (mainViewIOS*)self.view;
 
-    ((MTKView *)self.view).delegate = self;
+    main_view.delegate = self;
     
-    _renderer = [[Renderer alloc] initWithView:(MTKView *)self.view];
+    _renderer = [[Renderer alloc] initWithView:main_view];
     
     id<MTLDevice> _device = [_renderer getDevice];
     
     _manager = [[Manager alloc] initWithDevice:_device];
+    main_view.touchHander = _manager;
     
     metalGPBlueBox* box = [[metalGPBlueBox alloc] initWithDevice:_device];
     
@@ -46,19 +48,19 @@
     [self _reshape];
 }
 
-- (void)mouseUp:(NSEvent *)theEvent
-{
-    CGFloat wdev2  = self.view.bounds.size.width / 2;
-    CGFloat hdev2 = self.view.bounds.size.height / 2;
-    
-    NSPoint point = [theEvent locationInWindow];
-  //  NSLog(@"location in window: %f, %f", point.x, point.y);
-    
-    float x = (point.x - wdev2) / wdev2;
-    float y = (point.y - hdev2) / hdev2;
-    
-    [_manager handleMouseTouch:x And:y];
-}
+//- (void)mouseUp:(NSEvent *)theEvent
+//{
+//    CGFloat wdev2  = self.view.bounds.size.width / 2;
+//    CGFloat hdev2 = self.view.bounds.size.height / 2;
+//    
+//    NSPoint point = [theEvent locationInWindow];
+//  //  NSLog(@"location in window: %f, %f", point.x, point.y);
+//    
+//    float x = (point.x - wdev2) / wdev2;
+//    float y = (point.y - hdev2) / hdev2;
+//    
+//    [_manager handleMouseTouch:x And:y];
+//}
 
 
 - (void)_render
