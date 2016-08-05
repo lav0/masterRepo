@@ -10,8 +10,9 @@
 
 #import "metalGeometryProviderProtocol.h"
 #import "metalTextureProviderProtocol.h"
+#import "touchHandlerProtocol.h"
 
-@interface Manager : NSObject
+@interface Manager : NSObject<touchHandlerProtocol>
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device;
 

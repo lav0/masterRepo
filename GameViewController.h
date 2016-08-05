@@ -13,7 +13,11 @@
 
 
 #if TARGET_IOS==1
+
+#import "mainViewIOS.h"
+
 typedef UIViewController VIEWCONTROLLER;
+
 #else
 typedef NSViewController VIEWCONTROLLER;
 #endif
