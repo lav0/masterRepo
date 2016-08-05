@@ -7,7 +7,10 @@
 //
 
 #import <MetalKit/MetalKit.h>
+#import "touchHandlerProtocol.h"
 
 @interface mainViewOSX : MTKView
+
+@property (assign, nonatomic) id<touchHandlerProtocol> touchHandler;
 
 @end

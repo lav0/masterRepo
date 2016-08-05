@@ -30,7 +30,7 @@
 {
     [super viewDidLoad];
     
-    mainViewIOS* main_view = (mainViewIOS*)self.view;
+    MAINVIEW* main_view = (MAINVIEW*)self.view;
 
     main_view.delegate = self;
     
@@ -39,7 +39,7 @@
     id<MTLDevice> _device = [_renderer getDevice];
     
     _manager = [[Manager alloc] initWithDevice:_device];
-    main_view.touchHander = _manager;
+    main_view.touchHandler = _manager;
     
     metalGPBlueBox* box = [[metalGPBlueBox alloc] initWithDevice:_device];
     

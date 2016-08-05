@@ -17,9 +17,14 @@
 #import "mainViewIOS.h"
 
 typedef UIViewController VIEWCONTROLLER;
+typedef mainViewIOS      MAINVIEW;
 
 #else
+
+#import "mainViewOSX.h"
+
 typedef NSViewController VIEWCONTROLLER;
+typedef mainViewOSX      MAINVIEW;
 #endif
 
 @interface GameViewController : VIEWCONTROLLER<MTKViewDelegate>
