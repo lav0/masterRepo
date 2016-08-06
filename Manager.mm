@@ -13,6 +13,7 @@
 
 #include "Camera.hpp"
 #include "external/rcbPlaneForScreen.h"
+#include "external/rcbSphere.h"
 
 #include <vector>
 
@@ -22,6 +23,11 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 rcbVector3D convertFromSimdToRcb(const vector_float3& v)
 {
     return rcbVector3D(v[0], v[1], v[2]);
+}
+
+vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
+{
+    return { (float)rcb.getX(), (float)rcb.getY(), (float)rcb.getZ() };
 }
 
 @implementation Manager
@@ -114,7 +120,7 @@ rcbVector3D convertFromSimdToRcb(const vector_float3& v)
     }
 }
 
-- (void)handleMouseTouch:(float)x And:(float)y
+- (rcbVector3D)converToScreenPoint:(float)x And:(float)y
 {
     const vector_float3& eye = _camera.get_position();
     const vector_float3& dir = _camera.get_view_direction();
@@ -124,10 +130,7 @@ rcbVector3D convertFromSimdToRcb(const vector_float3& v)
     
     rcbUnitVector3D eye_direction(convertFromSimdToRcb(dir));
     rcbUnitVector3D up_direction(convertFromSimdToRcb(up));
-    rcbVector3D     screen_origin(eye_position.getX(),
-                                  eye_position.getY(),
-                                  eye_position.getZ() + DISTANCE_TO_PROJ_SCREEN
-                                  );
+    rcbVector3D     screen_origin(eye_position + DISTANCE_TO_PROJ_SCREEN * eye_direction);
     
     rcbPlaneForScreen plane(eye_direction,
                             up_direction,
@@ -139,8 +142,15 @@ rcbVector3D convertFromSimdToRcb(const vector_float3& v)
     auto scaleX = 1 / proj00;
     auto scaleY = 1 / proj11;
     
-    rcbVector3D vc_world = plane.screenToWorld(x * scaleX, y * scaleY);
+    return plane.screenToWorld(x * scaleX, y * scaleY);
+}
+
+- (void)handleMouseTouch:(float)x And:(float)y
+{
+    const vector_float3& eye = _camera.get_position();
+    rcbVector3D eye_position(convertFromSimdToRcb(eye));
     
+    rcbVector3D vc_world = [self converToScreenPoint:x And:y];
     rcbUnitVector3D ray_direction = vc_world - eye_position;
     
     for (metalCustomGeometry* g in _geometriesArray)
@@ -154,7 +164,36 @@ rcbVector3D convertFromSimdToRcb(const vector_float3& v)
             [_touchedItems performSelector:@selector(removeObject:) withObject:g afterDelay:0.8];
         }
     }
+}
+
+- (void)handleMouseMove:(float)x And:(float)y With:(float)x2 And:(float)y2
+{
+    const vector_float3& eye = _camera.get_position();
+    rcbVector3D eye_position(convertFromSimdToRcb(eye));
     
+    rcbVector3D vc_world1 = [self converToScreenPoint:x And:y];
+    rcbVector3D vc_world2 = [self converToScreenPoint:x2 And:y2];
+    
+    rcbSphere s(rcbVector3D(0.0, 0.0, 0.0), 2.2);
+    rcbLine3D line1(eye_position, vc_world1);
+    rcbLine3D line2(eye_position, vc_world2);
+    
+    bool both = YES;
+    both &= s.intersection(line1, vc_world1);
+    both &= s.intersection(line2, vc_world2);
+    
+    if (both)
+    {
+        auto axis = vc_world2.vector_mul(vc_world1);
+        if (!axis.is_zero_vector())
+            axis.normalize();
+        
+        auto angle = (float) (vc_world2 ^ vc_world1);
+        
+        NSLog(@"Trying to rotate: %f", angle);
+        _camera.rotate(convertFromRcbToSimd(axis), angle);
+        [self _updateViewProjection];
+    }
 }
 
 
@@ -168,7 +207,6 @@ rcbVector3D convertFromSimdToRcb(const vector_float3& v)
     }
     
     _rotation += 0.05f;
-    
 }
 
 - (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry

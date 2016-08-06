@@ -11,5 +11,6 @@
 @protocol touchHandlerProtocol <NSObject>
 
 - (void)handleMouseTouch:(float)x And:(float)y;
+- (void)handleMouseMove:(float)x And:(float)y With:(float)dx And:(float)dy;
 
 @end

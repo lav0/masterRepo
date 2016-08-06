@@ -21,6 +21,7 @@ public:
     Camera(vector_float3& eye, vector_float3& direction, vector_float3& up);
     
     void move(const vector_float3& shift);
+    void rotate(const vector_float3& axis, const float angle);
     
     const vector_float3&   get_position() const;
     const vector_float3&   get_view_direction() const;

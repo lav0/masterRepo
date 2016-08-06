@@ -115,5 +115,35 @@ static matrix_float4x4 matrix_from_rotation(float radians, float x, float y, flo
     return m;
 }
 
+static matrix_float3x3 matrix3x3_from_rotation(float radians, float x, float y, float z)
+{
+    vector_float3 v = vector_normalize(((vector_float3){x, y, z}));
+    float cos = cosf(radians);
+    float cosp = 1.0f - cos;
+    float sin = sinf(radians);
+    
+    matrix_float3x3 m = {
+        .columns[0] = {
+            cos + cosp * v.x * v.x,
+            cosp * v.x * v.y + v.z * sin,
+            cosp * v.x * v.z - v.y * sin,
+        },
+        
+        .columns[1] = {
+            cosp * v.x * v.y - v.z * sin,
+            cos + cosp * v.y * v.y,
+            cosp * v.y * v.z + v.x * sin,
+        },
+        
+        .columns[2] = {
+            cosp * v.x * v.z + v.y * sin,
+            cosp * v.y * v.z - v.x * sin,
+            cos + cosp * v.z * v.z,
+        }
+    };
+    
+    return m;
+}
+
 
 #endif /* transformation_h */

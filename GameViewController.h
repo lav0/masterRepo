@@ -25,6 +25,7 @@ typedef mainViewIOS      MAINVIEW;
 
 typedef NSViewController VIEWCONTROLLER;
 typedef mainViewOSX      MAINVIEW;
+
 #endif
 
 @interface GameViewController : VIEWCONTROLLER<MTKViewDelegate>
