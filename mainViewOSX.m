@@ -99,4 +99,16 @@
     [_touchHandler handleMouseTouch:point.x And:point.y];
 }
 
+- (void)magnifyWithEvent:(NSEvent *)event
+{
+    NSPoint point = [self convertPointToCentral:[event locationInWindow]];
+    
+    [_touchHandler handleZooming:point.x And:point.y Magnification:event.magnification];
+}
+
+- (void)scrollWheel:(NSEvent *)theEvent
+{
+    NSLog(@"Scroling");
+}
+
 @end

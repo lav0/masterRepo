@@ -32,8 +32,8 @@ void Camera::rotate(const vector_float3& axis, const float angle)
 {
     auto mtx = matrix3x3_from_rotation(angle, axis[0], axis[1], axis[2]);
     
-    m_position = matrix_multiply(mtx, m_position);
-    m_direction = matrix_multiply(mtx, m_direction);
+    m_position    = matrix_multiply(mtx, m_position);
+    m_direction   = matrix_multiply(mtx, m_direction);
     m_orientation = matrix_multiply(mtx, m_orientation);
     
     m_recalculate_view_needed = true;

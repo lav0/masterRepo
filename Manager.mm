@@ -190,10 +190,24 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
         
         auto angle = (float) (vc_world2 ^ vc_world1);
         
-        NSLog(@"Trying to rotate: %f", angle);
         _camera.rotate(convertFromRcbToSimd(axis), angle);
         [self _updateViewProjection];
     }
+}
+
+- (void)handleZooming:(float)x And:(float)y Magnification:(float)magni
+{
+    rcbVector3D vc_world = [self converToScreenPoint:x And:y];
+    
+    const vector_float3& eye = _camera.get_position();
+    rcbVector3D eye_position(convertFromSimdToRcb(eye));
+    
+    rcbUnitVector3D zoom_direction = vc_world - eye_position;
+    
+    rcbVector3D magnification = magni * zoom_direction;
+    
+    _camera.move(convertFromRcbToSimd(magnification));
+    [self _updateViewProjection];
 }
 
 

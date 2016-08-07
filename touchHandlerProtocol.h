@@ -12,5 +12,6 @@
 
 - (void)handleMouseTouch:(float)x And:(float)y;
 - (void)handleMouseMove:(float)x And:(float)y With:(float)dx And:(float)dy;
+- (void)handleZooming:(float)x And:(float)y Magnification:(float)magni;
 
 @end
