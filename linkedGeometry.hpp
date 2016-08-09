@@ -13,7 +13,6 @@
 #include <vector>
 #include "linkedTriangle.hpp"
 
-
 class linkedGeometry
 {
 public:
@@ -26,8 +25,10 @@ public:
     
     Vertex* getClosestTo(const simd::float4& aim) const;
     
-    bool isIntersectedWithRay(const rcbVector3D&     ray_origin,
-                              const rcbUnitVector3D& ray_direction) const;
+    bool intersectionWithRay(const rcbVector3D&     ray_origin,
+                             const rcbUnitVector3D& ray_direction,
+                             rcbVector3D*    output_intersection = nullptr,
+                             linkedTriangle* output_triangle = nullptr) const;
     
 private:
     

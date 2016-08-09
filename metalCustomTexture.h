@@ -23,4 +23,7 @@
 - (id<MTLBuffer>)bufferCoords;
 - (id<MTLTexture>)dataMipMap;
 
+- (bool)catchBindPointBy:(simd::float4)point;
+- (bool)changeCaughtBindPointWith:(simd::float4)point;
+
 @end

@@ -12,6 +12,7 @@
 #import "metalCustomTexture.h"
 
 #include "Camera.hpp"
+#include "convertFunctionsRcb.h"
 #include "external/rcbPlaneForScreen.h"
 #include "external/rcbSphere.h"
 
@@ -19,16 +20,6 @@
 
 static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 
-
-rcbVector3D convertFromSimdToRcb(const vector_float3& v)
-{
-    return rcbVector3D(v[0], v[1], v[2]);
-}
-
-vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
-{
-    return { (float)rcb.getX(), (float)rcb.getY(), (float)rcb.getZ() };
-}
 
 @implementation Manager
 {
@@ -43,6 +34,8 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
     unsigned int    _nextGeometryIndex;
     
     NSMutableArray* _touchedItems;
+    
+    bool _catchTexturePoint;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -57,6 +50,7 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
         
         _rotation = 0.f;
         _nextGeometryIndex = 0;
+        _catchTexturePoint = YES;
         
         [self createGeometry:device];
         [self createTexture:device];
@@ -126,10 +120,10 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
     const vector_float3& dir = _camera.get_view_direction();
     const vector_float3& up  = _camera.get_up_direction();
     
-    rcbVector3D     eye_position(convertFromSimdToRcb(eye));
+    rcbVector3D     eye_position(mop::convertFromSimdToRcb(eye));
     
-    rcbUnitVector3D eye_direction(convertFromSimdToRcb(dir));
-    rcbUnitVector3D up_direction(convertFromSimdToRcb(up));
+    rcbUnitVector3D eye_direction(mop::convertFromSimdToRcb(dir));
+    rcbUnitVector3D up_direction(mop::convertFromSimdToRcb(up));
     rcbVector3D     screen_origin(eye_position + DISTANCE_TO_PROJ_SCREEN * eye_direction);
     
     rcbPlaneForScreen plane(eye_direction,
@@ -145,31 +139,70 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
     return plane.screenToWorld(x * scaleX, y * scaleY);
 }
 
-- (void)handleMouseTouch:(float)x And:(float)y
+- (NSUInteger)getGeometryAndTouchedPoint:(float)x And:(float)y touchedPoint:(vector_float4&)output
 {
     const vector_float3& eye = _camera.get_position();
-    rcbVector3D eye_position(convertFromSimdToRcb(eye));
+    rcbVector3D eye_position(mop::convertFromSimdToRcb(eye));
     
     rcbVector3D vc_world = [self converToScreenPoint:x And:y];
     rcbUnitVector3D ray_direction = vc_world - eye_position;
     
     for (metalCustomGeometry* g in _geometriesArray)
     {
+        vector_float4 touched_p;
+        
         BOOL is_good = [g touchedWithRayOrigin:eye_position
-                                  andDirection:ray_direction];
+                                  andDirection:ray_direction
+                                     touchedAt:touched_p];
         
         if (is_good)
         {
-            [_touchedItems addObject:g];
-            [_touchedItems performSelector:@selector(removeObject:) withObject:g afterDelay:0.8];
+            output = touched_p;
+            return [_geometriesArray indexOfObject:g];
         }
+    }
+    
+    return -1;
+}
+
+- (void)handleMouseTouch:(float)x And:(float)y
+{
+    vector_float4 v;
+    
+    NSUInteger index = [self getGeometryAndTouchedPoint:x And:y touchedPoint:v];
+    
+    if (index != -1)
+    {
+        metalCustomGeometry* g = [_geometriesArray objectAtIndex:index];
+        metalCustomTexture* t = [_texturesArray objectAtIndex:index];
+        if (_catchTexturePoint)
+        {
+            NSLog(@"Catching");
+            if ([t catchBindPointBy:v])
+            {
+                _catchTexturePoint = NO;
+                [_touchedItems removeAllObjects];
+                [_touchedItems addObject:g];
+            }
+        }
+        else
+        {
+            NSLog(@"Replacing");
+            if ([_touchedItems containsObject:g])
+            {
+                [t changeCaughtBindPointWith:v];
+                _catchTexturePoint = YES;
+            }
+            
+        }
+        
     }
 }
 
 - (void)handleMouseMove:(float)x And:(float)y With:(float)x2 And:(float)y2
 {
     const vector_float3& eye = _camera.get_position();
-    rcbVector3D eye_position(convertFromSimdToRcb(eye));
+    rcbVector3D eye_position(mop::convertFromSimdToRcb(eye));
     
     rcbVector3D vc_world1 = [self converToScreenPoint:x And:y];
     rcbVector3D vc_world2 = [self converToScreenPoint:x2 And:y2];
@@ -190,7 +223,7 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
         
         auto angle = (float) (vc_world2 ^ vc_world1);
         
-        _camera.rotate(convertFromRcbToSimd(axis), angle);
+        _camera.rotate(mop::convertFromRcbToSimd(axis), angle);
         [self _updateViewProjection];
     }
 }
@@ -200,13 +233,13 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
     rcbVector3D vc_world = [self converToScreenPoint:x And:y];
     
     const vector_float3& eye = _camera.get_position();
-    rcbVector3D eye_position(convertFromSimdToRcb(eye));
+    rcbVector3D eye_position(mop::convertFromSimdToRcb(eye));
     
     rcbUnitVector3D zoom_direction = vc_world - eye_position;
     
-    rcbVector3D magnification = magni * zoom_direction;
+    rcbVector3D magnification = 2 * magni * zoom_direction;
     
-    _camera.move(convertFromRcbToSimd(magnification));
+    _camera.move(mop::convertFromRcbToSimd(magnification));
     [self _updateViewProjection];
 }
 
@@ -215,8 +248,6 @@ vector_float3 convertFromRcbToSimd(const rcbVector3D& rcb)
 {
     for (metalCustomGeometry* touched in _touchedItems)
     {
-        [touched.spacePosition rotateWithAxis:(vector_float3){0.f, 1.0f, 0.f}
-                                     andAngle: (int(_rotation) & 1) ? 0.1 : -0.1];
         [touched update];
     }
     

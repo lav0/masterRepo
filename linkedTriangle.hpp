@@ -41,7 +41,7 @@ public:
     rcbVector3D     getRcbVertex(unsigned index) const;
     rcbPlane        getRcbPlane() const;
     
-    bool isIntersectedByLine(const rcbLine3D& line) const;
+    bool intersectionWithLine(const rcbLine3D& line, rcbVector3D& output) const;
     
 private:
     Vertex* p_v0;

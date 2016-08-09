@@ -66,8 +66,10 @@ void linkedGeometry::updateModelTransformation(matrix_float4x4* trs)
 }
 
 //======================================================================================
-bool linkedGeometry::isIntersectedWithRay(const rcbVector3D&     ray_origin,
-                                          const rcbUnitVector3D& ray_direction) const
+bool linkedGeometry::intersectionWithRay(const rcbVector3D&     ray_origin,
+                                         const rcbUnitVector3D& ray_direction,
+                                         rcbVector3D*    output_intersection,
+                                         linkedTriangle* output_triangle) const
 {
     assert(!m_faces.empty());
     
@@ -75,8 +77,15 @@ bool linkedGeometry::isIntersectedWithRay(const rcbVector3D&     ray_origin,
         
     for (auto face : m_faces)
     {
-        if (face.isIntersectedByLine(ray_line))
+        rcbVector3D vc_intersection;
+        if (face.intersectionWithLine(ray_line, vc_intersection))
         {
+            if (nullptr != output_intersection)
+                *output_intersection = vc_intersection;
+            
+            if (nullptr != output_triangle)
+                *output_triangle = face;
+            
             return true;
         }
     }

@@ -9,6 +9,7 @@
 #import "metalCustomGeometry.h"
 #import "OBJModel.h"
 #import "linkedGeometry.hpp"
+#import "convertFunctionsRcb.h"
 
 static const float c = 1.f, n = -1.f;
 static const float vertexData[] =
@@ -158,13 +159,27 @@ static const IndexType indexData[] =
     
     return nullptr;
 }
+
 - (BOOL)touchedWithRayOrigin:(const rcbVector3D&)ray_origin
                 andDirection:(const rcbUnitVector3D&)direction
+                   touchedAt:(vector_float4&)result
 {
     auto trs = [self.spacePosition getTransformation];
     _linkedGeo->updateModelTransformation(&trs);
     
-    return _linkedGeo->isIntersectedWithRay(ray_origin, direction);
+    rcbVector3D vc;
+    
+    BOOL intersected = _linkedGeo->intersectionWithRay(ray_origin, direction, &vc);
+    
+    if (intersected)
+    {
+        auto inverted = matrix_invert(trs);
+        vector_float4 v = mop::convertFromRcbToSimdPos(vc);
+        
+        result = matrix_multiply(inverted, v);
+    }
+    
+    return intersected;
 }
 
 

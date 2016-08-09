@@ -19,6 +19,11 @@
     std::vector<simd::float2*> _textureCoords;
     
     std::vector<simd::float4> _theVertices;
+    
+    simd::float4 _bind_point0;
+    simd::float4 _bind_point1;
+    
+    int _caught_point;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -31,16 +36,51 @@
         
         [self _prepareBufferWithDevice:device];
         
-        simd::float4 tenacity0 = {2.f, 0.f, 0.f, 1.f};
-        simd::float4 tenacity1 = {0.f, 0.f, 0.f, 1.f};
+        _bind_point0 = {2.f, 0.f, 0.f, 1.f};
+        _bind_point1 = {0.f, 0.f, 0.f, 1.f};
         
-        [self transformTextureAccordingWith:tenacity0
-                                         And:tenacity1];
+        _caught_point = -1;
+        
+        [self transfromTextureWithBindPoints];
         
         _dataMipMap = [MBETextureLoader texture2DWithImageNamed:fileName device:device];
     }
     
     return self;
+}
+
+- (bool)catchBindPointBy:(simd::float4)point
+{
+    float tol = 0.1;
+    _caught_point = -1;
+    
+    if (vector_distance_squared(_bind_point0, point) < tol)
+    {
+        _caught_point = 0;
+    }
+    else if (vector_distance_squared(_bind_point1, point) < tol)
+    {
+        _caught_point = 1;
+    }
+    
+    return _caught_point != -1;
+}
+
+- (bool)changeCaughtBindPointWith:(simd::float4)point
+{
+    if (_caught_point == -1)
+        return NO;
+    
+    if (_caught_point == 0)
+        _bind_point0 = point;
+    else if (_caught_point == 1)
+        _bind_point1 = point;
+    else
+        assert(false);
+    
+    [self transfromTextureWithBindPoints];
+    
+    return YES;
 }
 
 - (id<MTLBuffer>)bufferCoords
@@ -51,8 +91,14 @@
 {
     return _dataMipMap;
 }
+
+- (void)transfromTextureWithBindPoints
+{
+    [self transformTextureAccordingWith:_bind_point0 And:_bind_point1];
+}
+
 - (void)transformTextureAccordingWith:(simd::float4&)vertexBase0
-                                   And:(simd::float4&)vertexBase1
+                                  And:(simd::float4&)vertexBase1
 {
     //// pick the base points to determine transformation from vectex system to texture one:
     //// (x,y) -> (u,v)

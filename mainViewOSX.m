@@ -108,7 +108,7 @@
 
 - (void)scrollWheel:(NSEvent *)theEvent
 {
-    NSLog(@"Scroling");
+    
 }
 
 @end

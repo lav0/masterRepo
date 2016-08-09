@@ -149,24 +149,20 @@ rcbPlane linkedTriangle::getRcbPlane() const
 }
 
 //======================================================================================
-bool linkedTriangle::isIntersectedByLine(const rcbLine3D& line) const
+bool linkedTriangle::intersectionWithLine(const rcbLine3D& line, rcbVector3D& output) const
 {
     auto plane = getRcbPlane();
     
-    rcbVector3D intersection;
-    if (!plane.intersection(line, intersection))
+    if (!plane.intersection(line, output))
     {
         return false;
     }
     
     simd::float4 a, b, c;
-    simd::float3 point = { (float)intersection.getX(), (float)intersection.getY(), (float)intersection.getZ() };
+    simd::float3 point = { (float)output.getX(), (float)output.getY(), (float)output.getZ() };
     getVertexPositionTransformed(0, a);
     getVertexPositionTransformed(1, b);
     getVertexPositionTransformed(2, c);
     
-//    rcbUnitVector3D uvc(1.0, 0.0, 0.0);
-//    uvc.projectionOnPlane(rcbVector3D());
-//    
     return isPointInsideTriangle_bySquares(a, b, c, point);
 }
