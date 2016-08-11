@@ -125,13 +125,12 @@
 }
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
-           uniformBuffer:(id<MTLBuffer>)uniformBuffer
 {
     [_commandEncoder setVertexBuffer:[geometryProvider vertexBuffer]
                               offset:0
                              atIndex:0 ];
     
-    [_commandEncoder setVertexBuffer:uniformBuffer offset:0 atIndex:1 ];
+    [_commandEncoder setVertexBuffer:geometryProvider.uniformBuffer offset:0 atIndex:1 ];
     
     // Tell the render context we want to draw our primitives
     [_commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
@@ -141,27 +140,6 @@
                          indexBufferOffset:0];
     
     //[_commandEncoder setRenderPipelineState:_pipelineState0];
-}
-
-- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
-{
-    [self drawWithGeometry:geometryProvider uniformBuffer:geometryProvider.uniformBuffer];
-}
-
-- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
-                 texture:(id<metalTextureProviderProtocol>)textureProvider
-           uniformBuffer:(id<MTLBuffer>)uniformBuffer
-{
-    [self setTextureBuffer:textureProvider.bufferCoords andTextureData:textureProvider.dataMipMap];
-    [self drawWithGeometry:geometryProvider uniformBuffer:uniformBuffer];
-}
-
-- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
-                 texture:(id<metalTextureProviderProtocol>)textureProvider
-{
-    [self drawWithGeometry:geometryProvider
-                   texture:textureProvider
-             uniformBuffer:geometryProvider.uniformBuffer];
 }
 
 - (void)endFrame
@@ -176,10 +154,10 @@
 
 }
 
-- (void)setTextureBuffer:(id<MTLBuffer>)textureBuffer andTextureData:(id<MTLTexture>)textureData
+- (void)setTexture:(id<metalTextureProviderProtocol>)textureProvider
 {
-    [_commandEncoder setVertexBuffer:textureBuffer offset:0 atIndex:2];
-    [_commandEncoder setFragmentTexture:textureData atIndex:0];
+    [_commandEncoder setVertexBuffer:textureProvider.bufferCoords offset:0 atIndex:2];
+    [_commandEncoder setFragmentTexture:textureProvider.dataMipMap atIndex:0];
     
 }
 

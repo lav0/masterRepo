@@ -21,17 +21,8 @@
 
 - (void)startFrame;
 
-- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
-           uniformBuffer:(id<MTLBuffer>)uniformBuffer;
-
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider;
-
-- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
-                 texture:(id<metalTextureProviderProtocol>)textureProvider
-           uniformBuffer:(id<MTLBuffer>)uniformBuffer;
-
-- (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
-                 texture:(id<metalTextureProviderProtocol>)textureProvider;
+- (void)setTexture:(id<metalTextureProviderProtocol>)textureProvider;
 
 - (void)endFrame;
 

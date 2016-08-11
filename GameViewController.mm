@@ -59,7 +59,8 @@
     
     while ([_manager getNextGeometry:&g andTexture:&t])
     {
-        [_renderer drawWithGeometry:g texture:t];
+        [_renderer setTexture:t];
+        [_renderer drawWithGeometry:g];
     }
     
     [_renderer endFrame];

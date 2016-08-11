@@ -9,6 +9,7 @@
 #ifndef SharedStructures_h
 #define SharedStructures_h
 
+#import <_types/_uint16_t.h>
 #import <simd/simd.h>
 
 struct Vertex
