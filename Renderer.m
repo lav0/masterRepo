@@ -16,8 +16,8 @@
     id <MTLDevice>              _device;
     id <MTLCommandQueue>        _commandQueue;
     id <MTLLibrary>             _defaultLibrary;
-    id <MTLRenderPipelineState> _pipelineState;
-    id <MTLRenderPipelineState> _pipelineState0;
+    
+    NSMutableArray* _arrPipelineStates;
     
     id <MTLDepthStencilState>   _depthState;
     
@@ -25,6 +25,8 @@
     id<MTLRenderCommandEncoder> _commandEncoder;
     
     MTLRenderPassDescriptor* _renderPass;
+    
+    NSUInteger _textureCounter;
 }
 
 - (id<MTLDevice>)getDevice
@@ -48,19 +50,39 @@
         _view.device = [self getDevice];
         
         _view.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
+        
+        _arrPipelineStates = [[NSMutableArray alloc] init];
+        _textureCounter = 0;
     }
     
     return self;
 }
 
+- (void)createPipelineStatesArray:(MTLRenderPipelineDescriptor*)desc
+{
+    NSString* vertBase = @"lighting_vertex";
+    NSString* fragBase = @"lighting_fragment";
+    
+    for (int i=0; i<4; ++i)
+    {
+        NSNumber* num = [NSNumber numberWithInt:i];
+        NSString* vert = [vertBase stringByAppendingString:[num stringValue]];
+        NSString* frag = [fragBase stringByAppendingString:[num stringValue]];
+        
+        desc.vertexFunction = [_defaultLibrary newFunctionWithName:vert];
+        desc.fragmentFunction = [_defaultLibrary newFunctionWithName:frag];
+        
+        NSError *error = NULL;
+        id <MTLRenderPipelineState> rps = [_device newRenderPipelineStateWithDescriptor:desc error:&error];
+        if (!rps) {
+            NSLog(@"Failed to created second pipeline state, %@", error);
+        }
+        [_arrPipelineStates addObject:rps];
+    }
+}
+
 - (void)initPipelineState:(MTLVertexDescriptor*)vertDesc
 {
-    // Load the fragment program into the library
-    id <MTLFunction> fragmentProgram = [_defaultLibrary newFunctionWithName:@"lighting_fragment"];
-    
-    // Load the vertex program into the library
-    id <MTLFunction> vertexProgram = [_defaultLibrary newFunctionWithName:@"lighting_vertex"];
-    
     // Create a vertex descriptor from the MTKMesh
     MTLVertexDescriptor *vertexDescriptor = vertDesc; //[MTLVertexDescriptor vertexDescriptor];
     vertexDescriptor.layouts[0].stepRate = 1;
@@ -69,24 +91,12 @@
     // Create a reusable pipeline state
     MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
     pipelineStateDescriptor.label = @"MyPipeline";
-    pipelineStateDescriptor.vertexFunction = vertexProgram;
-    pipelineStateDescriptor.fragmentFunction = fragmentProgram;
     pipelineStateDescriptor.vertexDescriptor = vertexDescriptor;
     pipelineStateDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
     pipelineStateDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
     pipelineStateDescriptor.stencilAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
-    NSError *error = NULL;
-    _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
-    if (!_pipelineState) {
-        NSLog(@"Failed to created pipeline state, error %@", error);
-    }
     
-    pipelineStateDescriptor.vertexFunction = [_defaultLibrary newFunctionWithName:@"lighting_vertex0"];
-    pipelineStateDescriptor.fragmentFunction = [_defaultLibrary newFunctionWithName:@"lighting_fragment0"];
-    _pipelineState0 = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
-    if (!_pipelineState0) {
-        NSLog(@"Failed to created second pipeline state, %@", error);
-    }
+    [self createPipelineStatesArray:pipelineStateDescriptor];
     
     _renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
     //self.renderPass.colorAttachments[0].texture = framebufferTexture;
@@ -115,17 +125,28 @@
         return;
     }
     
+    _textureCounter = 0;
+    
     _commandBuffer = [_commandQueue commandBuffer];
     _commandEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
     [_commandEncoder setDepthStencilState:_depthState];
     
     // Set context state
     [_commandEncoder pushDebugGroup:@"DrawCube"];
-    [_commandEncoder setRenderPipelineState:_pipelineState0];
+}
+
+- (void)addTexture:(id<metalTextureProviderProtocol>)textureProvider
+{
+    [_commandEncoder setVertexBuffer:textureProvider.bufferCoords offset:0 atIndex:2 + _textureCounter];
+    [_commandEncoder setFragmentTexture:textureProvider.dataMipMap atIndex:_textureCounter];
+    
+    ++_textureCounter;
 }
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider
 {
+    [_commandEncoder setRenderPipelineState:[_arrPipelineStates objectAtIndex:_textureCounter]];
+    
     [_commandEncoder setVertexBuffer:[geometryProvider vertexBuffer]
                               offset:0
                              atIndex:0 ];
@@ -139,7 +160,7 @@
                                indexBuffer:[geometryProvider indexBuffer]
                          indexBufferOffset:0];
     
-    //[_commandEncoder setRenderPipelineState:_pipelineState0];
+    _textureCounter = 0;
 }
 
 - (void)endFrame
@@ -154,11 +175,5 @@
 
 }
 
-- (void)setTexture:(id<metalTextureProviderProtocol>)textureProvider
-{
-    [_commandEncoder setVertexBuffer:textureProvider.bufferCoords offset:0 atIndex:2];
-    [_commandEncoder setFragmentTexture:textureProvider.dataMipMap atIndex:0];
-    
-}
 
 @end

@@ -26,4 +26,6 @@
 - (bool)catchBindPointBy:(simd::float4)point;
 - (bool)changeCaughtBindPointWith:(simd::float4)point;
 
+- (void)mergeWithTexture:(metalCustomTexture*)theOther;
+
 @end

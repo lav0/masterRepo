@@ -8,8 +8,6 @@
 
 #import "Manager.h"
 #import "metalGPBlueBox.h"
-#import "metalCustomGeometry.h"
-#import "metalCustomTexture.h"
 
 #include "Camera.hpp"
 #include "convertFunctionsRcb.h"
@@ -23,8 +21,9 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 
 @implementation Manager
 {
-    NSMutableArray* _geometriesArray;
-    NSMutableArray* _texturesArray;
+    NSMutableArray* _theModels;
+    
+    metalCustomTexture* _textureTmp;
     
     Camera          _camera;
     
@@ -42,8 +41,7 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 {
     if (self = [super init])
     {
-        _geometriesArray = [[NSMutableArray alloc] init];
-        _texturesArray   = [[NSMutableArray alloc] init];
+        _theModels       = [[NSMutableArray alloc] init];
         _touchedItems    = [[NSMutableArray alloc] init];
         
         _camera.move( {0.f, 0.f, -8.f} );
@@ -70,25 +68,53 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
         NSLog(@"Sorry. File not found");
     
     metalCustomGeometry* g1 = [[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:quadroURL];
-    metalCustomGeometry* g2 = [[metalCustomGeometry alloc] initWithDevice:device]; // andLoadFrom:gridURL];
+    metalCustomGeometry* g2 = [[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:gridURL];
     
     [g1 setSpacePosition:position1];
     [g2 setSpacePosition:position2];
     
-    [_geometriesArray addObject:g1];
-    [_geometriesArray addObject:g2];
+    [_theModels addObject:[[metalModel alloc] initWithGeometry:g2]];
+    [_theModels addObject:[[metalModel alloc] initWithGeometry:g1]];
 }
 
 - (void)createTexture:(id<MTLDevice>)device
 {
-    for (metalCustomGeometry* g in _geometriesArray)
+    bool b = YES;
+    for (metalModel* m in _theModels)
     {
-        auto purePositions = [Manager collectPositionsFrom:g];
+        auto purePositions = [Manager collectPositionsFrom:[m getGeometry]];
+        
         metalCustomTexture* t = [[metalCustomTexture alloc] initWithDevice:device
                                                                   Vertices:purePositions
                                                                 andPicture:@"Image008"];
-    
-        [_texturesArray addObject:t];
+        
+        if (b)
+        {
+            _textureTmp = [[metalCustomTexture alloc] initWithDevice:device
+                                                            Vertices:purePositions
+                                                          andPicture:@"Image008"];
+            metalCustomTexture* tTmp = [[metalCustomTexture alloc] initWithDevice:device
+                                                                         Vertices:purePositions
+                                                                       andPicture:@"Image008"];
+            simd::float4 toint0 = {-0.4f, -0.6f, 0.f, 1.f};
+            simd::float4 toint1 = {-0.8f, -1.f, 0.f, 1.f};
+            simd::float4 koint0 = {0.2f, 0.3f, 0.f, 1.f};
+            simd::float4 koint1 = {-0.2f, 0.f, 0.f, 1.f};
+            
+            [_textureTmp transformTextureAccordingWith:toint0 And:toint1];
+            [tTmp transformTextureAccordingWith:koint0 And:koint1];
+            
+            [m addTexture:_textureTmp];
+            [m addTexture:tTmp];
+            
+            simd::float4 point0 = {0.8f, 0.8f, 0.f, 1.f};
+            simd::float4 point1 = {0.4f, 0.4f, 0.f, 1.f};
+            [t transformTextureAccordingWith:point0 And:point1];
+            
+            b = NO;
+        }
+        
+        [m addTexture:t];
     }
 }
 
@@ -107,8 +133,10 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 {
     matrix_float4x4 viewProj = matrix_multiply(_projectionMatrix, _camera.get_view_transformation());
     
-    for (metalCustomGeometry* g in _geometriesArray)
+    for (metalModel* model in _theModels)
     {
+        metalCustomGeometry* g = [model getGeometry];
+        
         [g setViewProjection:&viewProj];
         [g update];
     }
@@ -147,8 +175,10 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
     rcbVector3D vc_world = [self converToScreenPoint:x And:y];
     rcbUnitVector3D ray_direction = vc_world - eye_position;
     
-    for (metalCustomGeometry* g in _geometriesArray)
+    for (metalModel* model in _theModels)
     {
+        metalCustomGeometry* g = [model getGeometry];
+        
         vector_float4 touched_p;
         
         BOOL is_good = [g touchedWithRayOrigin:eye_position
@@ -158,7 +188,7 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
         if (is_good)
         {
             output = touched_p;
-            return [_geometriesArray indexOfObject:g];
+            return [_theModels indexOfObject:model];
         }
     }
     
@@ -173,29 +203,35 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
     
     if (index != -1)
     {
-        metalCustomGeometry* g = [_geometriesArray objectAtIndex:index];
-        metalCustomTexture* t = [_texturesArray objectAtIndex:index];
-        if (_catchTexturePoint)
-        {
-            NSLog(@"Catching");
-            if ([t catchBindPointBy:v])
-            {
-                _catchTexturePoint = NO;
-                [_touchedItems removeAllObjects];
-                [_touchedItems addObject:g];
-            }
-        }
-        else
-        {
-            NSLog(@"Replacing");
-            if ([_touchedItems containsObject:g])
-            {
-                [t changeCaughtBindPointWith:v];
-                _catchTexturePoint = YES;
-            }
-            
-        }
+        metalModel* model = [_theModels objectAtIndex:index];
         
+        metalCustomTexture* t = [model getNextTexture];
+        
+        while (nil != t)
+        {
+            if (_catchTexturePoint)
+            {
+                if ([t catchBindPointBy:v])
+                {
+                    NSLog(@"Caught");
+                    _catchTexturePoint = NO;
+                    [_touchedItems removeAllObjects];
+                    [_touchedItems addObject:model];
+                } else {
+                    NSLog(@"Missed"); }
+            }
+            else
+            {
+                NSLog(@"Replacing");
+                if ([_touchedItems containsObject:model])
+                {
+                    [t changeCaughtBindPointWith:v];
+                    _catchTexturePoint = YES;
+                }
+                
+            }
+            t = [model getNextTexture];
+        }
     }
 }
 
@@ -246,32 +282,25 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 
 - (void)update
 {
-    for (metalCustomGeometry* touched in _touchedItems)
+    for (metalModel* model in _touchedItems)
     {
+        metalCustomGeometry* touched = [model getGeometry];
         [touched update];
     }
     
     _rotation += 0.05f;
 }
 
-- (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry
-             andTexture:(id<metalTextureProviderProtocol>*)texture
+- (metalModel*)getNextModel
 {
-    assert([_geometriesArray count] == [_texturesArray count]);
-    
-    if (_nextGeometryIndex >= [_geometriesArray count])
+    if (_nextGeometryIndex >= [_theModels count])
     {
         _nextGeometryIndex = 0;
         
-        return NO;
+        return nil;
     }
     
-    *geometry = [_geometriesArray objectAtIndex:_nextGeometryIndex];
-    *texture  = [_texturesArray objectAtIndex:_nextGeometryIndex];
-    
-    ++_nextGeometryIndex;
-    
-    return YES;
+    return [_theModels objectAtIndex:_nextGeometryIndex++];
 }
 
 + (std::vector<simd::float4>)collectPositionsFrom:(id<metalGeometryProviderProtocol>)provider

@@ -22,7 +22,7 @@
 - (void)startFrame;
 
 - (void)drawWithGeometry:(id<metalGeometryProviderProtocol>)geometryProvider;
-- (void)setTexture:(id<metalTextureProviderProtocol>)textureProvider;
+- (void)addTexture:(id<metalTextureProviderProtocol>)textureProvider;
 
 - (void)endFrame;
 

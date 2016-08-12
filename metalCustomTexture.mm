@@ -51,7 +51,7 @@
 
 - (bool)catchBindPointBy:(simd::float4)point
 {
-    float tol = 0.1;
+    float tol = 0.2;
     _caught_point = -1;
     
     if (vector_distance_squared(_bind_point0, point) < tol)
@@ -147,6 +147,22 @@
     for (auto i=0; i<_theVertices.size(); ++i)
     {
         _textureCoords.push_back(&content[i]);
+    }
+}
+
+- (void)mergeWithTexture:(metalCustomTexture*)theOther
+{
+    simd::float2* otherTxtCoords = (simd::float2*) [[theOther bufferCoords] contents];
+    
+    for (size_t i = 0; i < _textureCoords.size(); ++i)
+    {
+        simd::float2 thisTxtCoord = *(_textureCoords[i]);
+        
+        if ( (thisTxtCoord[0] < -0.2f || thisTxtCoord[0] > 1.2) &&
+             (thisTxtCoord[1] < -0.2f || thisTxtCoord[1] > 1.2) )
+        {
+            *(_textureCoords[i]) = otherTxtCoords[i];
+        }
     }
 }
 

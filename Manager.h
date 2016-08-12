@@ -8,8 +8,7 @@
 
 #import <MetalKit/MTKView.h>
 
-#import "metalGeometryProviderProtocol.h"
-#import "metalTextureProviderProtocol.h"
+#import "metalModel.h"
 #import "touchHandlerProtocol.h"
 
 @interface Manager : NSObject<touchHandlerProtocol>
@@ -19,8 +18,11 @@
 - (void)recalculateProjectionWithWidth:(CGFloat)width AndHeight:(CGFloat)height;
 
 - (void)update;
+//
+//- (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry
+//             andTexture:(id<metalTextureProviderProtocol>*)texture;
 
-- (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry
-             andTexture:(id<metalTextureProviderProtocol>*)texture;
+- (metalModel*)getNextModel;
+
 
 @end

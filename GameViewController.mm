@@ -54,13 +54,21 @@
 
     [_renderer startFrame];
     
-    id<metalGeometryProviderProtocol> g;
-    id<metalTextureProviderProtocol> t;
-    
-    while ([_manager getNextGeometry:&g andTexture:&t])
+    metalModel* curModel = [_manager getNextModel];
+    while (nil != curModel)
     {
-        [_renderer setTexture:t];
-        [_renderer drawWithGeometry:g];
+        id<metalTextureProviderProtocol> t = [curModel getNextTexture];
+        
+        while (nil != t)
+        {
+            [_renderer addTexture:t];
+            
+            t = [curModel getNextTexture];
+        }
+        
+        [_renderer drawWithGeometry:[curModel getGeometry]];
+        
+        curModel = [_manager getNextModel];
     }
     
     [_renderer endFrame];
