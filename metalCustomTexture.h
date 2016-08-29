@@ -7,15 +7,21 @@
 //
 
 #import "metalTextureProviderProtocol.h"
+#import "imageProviderProtocol.h"
 #import <Metal/Metal.h>
 #import <simd/simd.h>
 #include <vector>
 
 @interface metalCustomTexture : NSObject<metalTextureProviderProtocol>
 
+
 - (instancetype)initWithDevice:(id<MTLDevice>)device
                       Vertices:(std::vector<simd::float4>)vertices
-                    andPicture:(NSString*)fileName;
+               andPictureNamed:(NSString*)fileName;
+
+- (instancetype)initWithDevice:(id<MTLDevice>)device
+                      Vertices:(std::vector<simd::float4>)vertices
+                    andPicture:(THEIMAGE*)image;
 
 - (void)transformTextureAccordingWith:(simd::float4&)vertexBase0
                                    And:(simd::float4&)vertexBase1;

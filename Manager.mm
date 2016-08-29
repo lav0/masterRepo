@@ -21,9 +21,10 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 
 @implementation Manager
 {
-    NSMutableArray* _theModels;
+    id<MTLDevice>             _device;
+    id<imageProviderProtocol> _imageProvider;
     
-    metalCustomTexture* _textureTmp;
+    NSMutableArray* _theModels;
     
     Camera          _camera;
     
@@ -38,9 +39,13 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
+              andImageProvider:(id<imageProviderProtocol>)imageProvider
 {
     if (self = [super init])
     {
+        _device = device;
+        _imageProvider = imageProvider;
+        
         _theModels       = [[NSMutableArray alloc] init];
         _touchedItems    = [[NSMutableArray alloc] init];
         
@@ -86,29 +91,12 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
         
         metalCustomTexture* t = [[metalCustomTexture alloc] initWithDevice:device
                                                                   Vertices:purePositions
-                                                                andPicture:@"Image008"];
+                                                           andPictureNamed:@"Image008"];
         
         if (b)
         {
-            _textureTmp = [[metalCustomTexture alloc] initWithDevice:device
-                                                            Vertices:purePositions
-                                                          andPicture:@"Image008"];
-            metalCustomTexture* tTmp = [[metalCustomTexture alloc] initWithDevice:device
-                                                                         Vertices:purePositions
-                                                                       andPicture:@"Image008"];
-            simd::float4 toint0 = {-0.4f, -0.6f, 0.f, 1.f};
-            simd::float4 toint1 = {-0.8f, -1.f, 0.f, 1.f};
-            simd::float4 koint0 = {0.2f, 0.3f, 0.f, 1.f};
-            simd::float4 koint1 = {-0.2f, 0.f, 0.f, 1.f};
-            
-            [_textureTmp transformTextureAccordingWith:toint0 And:toint1];
-            [tTmp transformTextureAccordingWith:koint0 And:koint1];
-            
-            [m addTexture:_textureTmp];
-            [m addTexture:tTmp];
-            
             simd::float4 point0 = {0.8f, 0.8f, 0.f, 1.f};
-            simd::float4 point1 = {0.4f, 0.4f, 0.f, 1.f};
+            simd::float4 point1 = {0.0f, 0.0f, 0.f, 1.f};
             [t transformTextureAccordingWith:point0 And:point1];
             
             b = NO;
@@ -195,6 +183,38 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
     return -1;
 }
 
+- (void)catchAndReplace:(metalCustomTexture*)t onModel:(metalModel*)model withPoint:(vector_float4)v
+{
+    while (nil != t)
+    {
+        if (_catchTexturePoint)
+        {
+            if ([t catchBindPointBy:v])
+            {
+                NSLog(@"Caught");
+                _catchTexturePoint = NO;
+                [_touchedItems removeAllObjects];
+                [_touchedItems addObject:model];
+                
+                break;
+                
+            } else {
+                NSLog(@"Missed"); }
+        }
+        else
+        {
+            NSLog(@"Replacing");
+            if ([_touchedItems containsObject:model])
+            {
+                [t changeCaughtBindPointWith:v];
+                _catchTexturePoint = YES;
+            }
+            
+        }
+        t = [model getNextTexture];
+    }
+}
+
 - (void)handleMouseTouch:(float)x And:(float)y
 {
     vector_float4 v;
@@ -207,30 +227,22 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
         
         metalCustomTexture* t = [model getNextTexture];
         
-        while (nil != t)
+        NSImage* image = [_imageProvider getActiveImage];
+        
+        if (nil == image)
         {
-            if (_catchTexturePoint)
-            {
-                if ([t catchBindPointBy:v])
-                {
-                    NSLog(@"Caught");
-                    _catchTexturePoint = NO;
-                    [_touchedItems removeAllObjects];
-                    [_touchedItems addObject:model];
-                } else {
-                    NSLog(@"Missed"); }
-            }
-            else
-            {
-                NSLog(@"Replacing");
-                if ([_touchedItems containsObject:model])
-                {
-                    [t changeCaughtBindPointWith:v];
-                    _catchTexturePoint = YES;
-                }
-                
-            }
-            t = [model getNextTexture];
+            [self catchAndReplace:t onModel:model withPoint:v];
+        }
+        else
+        {
+            auto purePositions = [Manager collectPositionsFrom:[model getGeometry]];
+            
+            metalCustomTexture* t = [[metalCustomTexture alloc] initWithDevice:_device
+                                                                      Vertices:purePositions
+                                                                    andPicture:image];
+            
+            [model addTexture:t];
+            
         }
     }
 }

@@ -10,12 +10,6 @@
 #import <MetalKit/MetalKit.h>
 
 
-#if TARGET_IOS==1
-typedef UIImage THEIMAGE;
-#else
-typedef NSImage THEIMAGE;
-#endif
-
 @implementation MBETextureLoader
 
 + (uint8_t *)dataForImage:(THEIMAGE *)image
@@ -57,6 +51,12 @@ typedef NSImage THEIMAGE;
     if (image == nil)
         NSLog(@"Image not found");
     
+    return [self texture2DWithImage:image device:device];
+}
+
+
++ (id<MTLTexture>)texture2DWithImage:(THEIMAGE *)image device:(id<MTLDevice>)device
+{
     CGSize imageSize = CGSizeMake(image.size.width, image.size.height);
     const NSUInteger bytesPerPixel = 4;
     const NSUInteger bytesPerRow = bytesPerPixel * imageSize.width;
@@ -75,6 +75,5 @@ typedef NSImage THEIMAGE;
     
     return texture;
 }
-
 
 @end

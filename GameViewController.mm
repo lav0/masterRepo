@@ -13,6 +13,7 @@
 #import "Renderer.h"
 #import "Manager.h"
 #import "metalGPBlueBox.h"
+#import "textureHolderView.h"
 
 #include "Camera.hpp"
 
@@ -21,6 +22,10 @@
 
 @implementation GameViewController
 {
+    MTKView * _root_view;
+    MAINVIEW* _world_view;
+    textureHolderView* _txt_view;
+    
     Renderer* _renderer;
     
     Manager* _manager;
@@ -30,20 +35,27 @@
 {
     [super viewDidLoad];
     
-    MAINVIEW* main_view = (MAINVIEW*)self.view;
-
-    main_view.delegate = self;
+    CGRect rect = [self.view frame];
     
-    _renderer = [[Renderer alloc] initWithView:main_view];
+    _world_view = [[MAINVIEW alloc] initWithFrame:rect];
+    _txt_view   = [[textureHolderView alloc] initWithFrame:rect];
+    
+    _renderer = [[Renderer alloc] initWithView:_world_view];
     
     id<MTLDevice> _device = [_renderer getDevice];
     
-    _manager = [[Manager alloc] initWithDevice:_device];
-    main_view.touchHandler = _manager;
+    _manager = [[Manager alloc] initWithDevice:_device andImageProvider:_txt_view];
+    _world_view.touchHandler = _manager;
     
     metalGPBlueBox* box = [[metalGPBlueBox alloc] initWithDevice:_device];
     
     [_renderer initPipelineState:[box vertexDescriptor]];
+    
+    _root_view = (MTKView*)self.view;
+    
+    [_root_view setDelegate:self];
+    [_root_view addSubview:_world_view];
+    [_root_view addSubview:_txt_view];
     
     [self _reshape];
 }
@@ -76,8 +88,21 @@
 
 - (void)_reshape
 {
-    [_manager recalculateProjectionWithWidth:self.view.bounds.size.width
-                                   AndHeight:self.view.bounds.size.height];
+    CGSize newsize = [self.view frame].size;
+    
+    // world view rate
+    CGFloat wvc = 1.0 - [textureHolderView selfApperanceRate];
+    CGSize world_size = CGSizeMake(wvc * newsize.width, newsize.height);
+    CGSize txt_size   = CGSizeMake((1-wvc) * newsize.width, newsize.height);
+    CGPoint txt_point = CGPointMake(world_size.width, 0);
+    
+    [_world_view setFrameSize:world_size];
+    [_txt_view setFrameSize:txt_size];
+    [_txt_view setFrameOrigin:txt_point];
+    [_txt_view arrangeImages];
+    
+    [_manager recalculateProjectionWithWidth:_world_view.bounds.size.width
+                                   AndHeight:_world_view.bounds.size.height];
 }
 
 // Called whenever view changes orientation or layout is changed

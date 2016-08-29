@@ -46,6 +46,12 @@ typedef struct {
 } ColorAndTextureInOut ;
 
 
+bool outOfTexture(float2 tc)
+{
+    return (tc[0] < 0.f || tc[0] > 1.f || tc[1] < 0.f || tc[1] > 1.f);
+}
+
+
 // Vertex shader function
 vertex ColorAndTextureInOut lighting_vertex0( vertex_t vertex_array [[stage_in]],
                                   constant uniforms_t& uniforms [[ buffer(1) ]])
@@ -148,54 +154,74 @@ fragment float4 lighting_fragment1(ColorAndTextureInOut            in      [[sta
     
     float4 tex_color = texture.sample(s, in.texture_coord1);
     float4 bac_color = in.color;
-    
-    
-    if (tex_color[3] == 1 || tex_color[3] == 0)
-        return bac_color;
-    
-    return tex_color;
-}
 
-fragment float4 lighting_fragment2(ColorAndTextureInOut             in      [[stage_in]],
-                                   texture2d<float, access::sample> texture [[texture(0)]])
-{
-    constexpr sampler s(coord::normalized,
-                        address::clamp_to_zero,
-                        filter::linear);
-    
-    float4 tex_color1 = texture.sample(s, in.texture_coord1);
-    float4 tex_color2 = texture.sample(s, in.texture_coord2);
-    float4 bac_color = in.color;
-    
-    if (tex_color1[3] != 1 && tex_color1[3] != 0)
-        return tex_color1;
-    
-    if (tex_color2[3] != 1 && tex_color2[3] != 0)
-        return tex_color2;
+    if (!outOfTexture(in.texture_coord1))
+    {
+        if (tex_color[3] > 0.05)
+            return tex_color;
+    }
     
     return bac_color;
 }
 
-fragment float4 lighting_fragment3(ColorAndTextureInOut             in      [[stage_in]],
-                                   texture2d<float, access::sample> texture [[texture(0)]])
+fragment float4 lighting_fragment2(ColorAndTextureInOut             in      [[stage_in]],
+                                   texture2d<float, access::sample> texture1 [[texture(0)]],
+                                   texture2d<float, access::sample> texture2 [[texture(1)]])
 {
     constexpr sampler s(coord::normalized,
                         address::clamp_to_zero,
                         filter::linear);
     
-    float4 tex_color1 = texture.sample(s, in.texture_coord1);
-    float4 tex_color2 = texture.sample(s, in.texture_coord2);
-    float4 tex_color3 = texture.sample(s, in.texture_coord3);
+    float4 tex_color1 = texture1.sample(s, in.texture_coord1);
+    float4 tex_color2 = texture2.sample(s, in.texture_coord2);
     float4 bac_color = in.color;
     
-    if (tex_color1[3] != 1 && tex_color1[3] != 0)
-        return tex_color1;
+    if (!outOfTexture(in.texture_coord1))
+    {
+        if (tex_color1[3] > 0.05)
+            return tex_color1;
+    }
     
-    if (tex_color2[3] != 1 && tex_color2[3] != 0)
-        return tex_color2;
+    if (!outOfTexture(in.texture_coord2))
+    {
+        if (tex_color2[3] > 0.05)
+            return tex_color2;
+    }
     
-    if (tex_color3[3] != 1 && tex_color3[3] != 0)
-        return tex_color3;
+    return bac_color;
+}
+
+fragment float4 lighting_fragment3(ColorAndTextureInOut             in       [[stage_in]],
+                                   texture2d<float, access::sample> texture1 [[texture(0)]],
+                                   texture2d<float, access::sample> texture2 [[texture(1)]],
+                                   texture2d<float, access::sample> texture3 [[texture(2)]])
+{
+    constexpr sampler s(coord::normalized,
+                        address::clamp_to_zero,
+                        filter::linear);
+    
+    float4 tex_color1 = texture1.sample(s, in.texture_coord1);
+    float4 tex_color2 = texture2.sample(s, in.texture_coord2);
+    float4 tex_color3 = texture3.sample(s, in.texture_coord3);
+    float4 bac_color = in.color;
+    
+    if (!outOfTexture(in.texture_coord1))
+    {
+        if (tex_color1[3] > 0.05)
+            return tex_color1;
+    }
+    
+    if (!outOfTexture(in.texture_coord2))
+    {
+        if (tex_color2[3] > 0.05)
+            return tex_color2;
+    }
+    
+    if (!outOfTexture(in.texture_coord3))
+    {
+        if (tex_color3[3] > 0.05)
+            return tex_color3;
+    }
     
     return bac_color;
 }

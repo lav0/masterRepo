@@ -28,7 +28,7 @@
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
                       Vertices:(std::vector<simd::float4>)vertices
-                    andPicture:(NSString*)fileName
+               andPictureNamed:(NSString*)fileName
 {
     if (self = [super init])
     {
@@ -44,6 +44,29 @@
         [self transfromTextureWithBindPoints];
         
         _dataMipMap = [MBETextureLoader texture2DWithImageNamed:fileName device:device];
+    }
+    
+    return self;
+}
+
+- (instancetype)initWithDevice:(id<MTLDevice>)device
+                      Vertices:(std::vector<simd::float4>)vertices
+                    andPicture:(THEIMAGE*)image
+{
+    if (self = [super init])
+    {
+        _theVertices = vertices;
+        
+        [self _prepareBufferWithDevice:device];
+        
+        _bind_point0 = {2.f, 0.f, 0.f, 1.f};
+        _bind_point1 = {0.f, 0.f, 0.f, 1.f};
+        
+        _caught_point = -1;
+        
+        [self transfromTextureWithBindPoints];
+        
+        _dataMipMap = [MBETextureLoader texture2DWithImage:image device:device];
     }
     
     return self;

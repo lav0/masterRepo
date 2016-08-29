@@ -10,10 +10,12 @@
 
 #import "metalModel.h"
 #import "touchHandlerProtocol.h"
+#import "imageProviderProtocol.h"
 
 @interface Manager : NSObject<touchHandlerProtocol>
 
-- (instancetype)initWithDevice:(id<MTLDevice>)device;
+- (instancetype)initWithDevice:(id<MTLDevice>)device
+              andImageProvider:(id<imageProviderProtocol>)imageProvider;
 
 - (void)recalculateProjectionWithWidth:(CGFloat)width AndHeight:(CGFloat)height;
 
