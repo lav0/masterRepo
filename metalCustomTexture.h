@@ -23,15 +23,13 @@
                       Vertices:(std::vector<simd::float4>)vertices
                     andPicture:(THEIMAGE*)image;
 
-- (void)setBindPoints:(simd::float4&)bind1 :(simd::float4&)bind2;
+- (void)setBindPoints:(simd::float3&)bind1 :(simd::float3&)bind2;
 - (void)transfromTextureWithBindPoints;
 
 - (id<MTLBuffer>)bufferCoords;
 - (id<MTLTexture>)dataMipMap;
 
-- (bool)catchBindPointBy:(simd::float4)point;
-- (bool)changeCaughtBindPointWith:(simd::float4)point;
-
-- (void)mergeWithTexture:(metalCustomTexture*)theOther;
+- (bool)catchBindPointBy:(simd::float3)point;
+- (bool)changeCaughtBindPointWith:(simd::float3)point;
 
 @end

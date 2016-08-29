@@ -20,8 +20,8 @@
     
     std::vector<simd::float4> _theVertices;
     
-    simd::float4 _bind_point0;
-    simd::float4 _bind_point1;
+    simd::float3 _bind_point0;
+    simd::float3 _bind_point1;
     
     int _caught_point;
 }
@@ -36,8 +36,8 @@
         
         [self _prepareBufferWithDevice:device];
         
-        _bind_point0 = {2.f, 0.f, 0.f, 1.f};
-        _bind_point1 = {0.f, 0.f, 0.f, 1.f};
+        _bind_point0 = {2.f, 0.f, 0.f};
+        _bind_point1 = {0.f, 0.f, 0.f};
         
         _caught_point = -1;
         
@@ -59,8 +59,8 @@
         
         [self _prepareBufferWithDevice:device];
         
-        _bind_point0 = {2.f, 0.f, 0.f, 1.f};
-        _bind_point1 = {0.f, 0.f, 0.f, 1.f};
+        _bind_point0 = {2.f, 0.f, 0.f};
+        _bind_point1 = {0.f, 0.f, 0.f};
         
         [self transfromTextureWithBindPoints];
         
@@ -72,13 +72,13 @@
     return self;
 }
 
-- (void)setBindPoints:(simd::float4&)bind0 :(simd::float4&)bind1;
+- (void)setBindPoints:(simd::float3&)bind0 :(simd::float3&)bind1;
 {
     _bind_point0 = bind0;
     _bind_point1 = bind1;
 }
 
-- (bool)catchBindPointBy:(simd::float4)point
+- (bool)catchBindPointBy:(simd::float3)point
 {
     float tol = 0.2;
     _caught_point = -1;
@@ -95,7 +95,7 @@
     return _caught_point != -1;
 }
 
-- (bool)changeCaughtBindPointWith:(simd::float4)point
+- (bool)changeCaughtBindPointWith:(simd::float3)point
 {
     if (_caught_point == -1)
         return NO;
@@ -121,7 +121,7 @@
     return _dataMipMap;
 }
 
-- (simd::float2)transformWorld2ModelSurface:(simd::float4&)worldPoint
+- (simd::float2)transformWorld2ModelSurface:(simd::float3&)worldPoint
 {
     return { worldPoint[0], worldPoint[1] };
 }
@@ -131,8 +131,8 @@
     [self transformTextureAccordingWith:_bind_point0 And:_bind_point1];
 }
 
-- (void)transformTextureAccordingWith:(simd::float4&)vertexBase0
-                                  And:(simd::float4&)vertexBase1
+- (void)transformTextureAccordingWith:(simd::float3&)vertexBase0
+                                  And:(simd::float3&)vertexBase1
 {
     //// pick the base points to determine transformation from vectex system to texture one:
     //// (x,y) -> (u,v)
@@ -184,20 +184,5 @@
     }
 }
 
-- (void)mergeWithTexture:(metalCustomTexture*)theOther
-{
-    simd::float2* otherTxtCoords = (simd::float2*) [[theOther bufferCoords] contents];
-    
-    for (size_t i = 0; i < _textureCoords.size(); ++i)
-    {
-        simd::float2 thisTxtCoord = *(_textureCoords[i]);
-        
-        if ( (thisTxtCoord[0] < -0.2f || thisTxtCoord[0] > 1.2) &&
-             (thisTxtCoord[1] < -0.2f || thisTxtCoord[1] > 1.2) )
-        {
-            *(_textureCoords[i]) = otherTxtCoords[i];
-        }
-    }
-}
 
 @end

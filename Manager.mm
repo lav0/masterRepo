@@ -96,8 +96,8 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
         
         if (b)
         {
-            simd::float4 point0 = {0.8f, 0.8f, 0.f, 1.f};
-            simd::float4 point1 = {0.0f, 0.0f, 0.f, 1.f};
+            simd::float3 point0 = {0.8f, 0.8f, 0.f};
+            simd::float3 point1 = {0.0f, 0.0f, 0.f};
             [t setBindPoints:point0 :point1];
             [t transfromTextureWithBindPoints];
             
@@ -185,7 +185,7 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     return -1;
 }
 
-- (void)catchAndReplace:(metalCustomTexture*)t onModel:(metalModel*)model withPoint:(vector_float4)v
+- (void)catchAndReplace:(metalCustomTexture*)t onModel:(metalModel*)model withPoint:(vector_float3)v
 {
     while (nil != t)
     {
@@ -217,11 +217,67 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     }
 }
 
+- (void)dropTextureOnModel:(metalModel*)model withImage:(THEIMAGE*)image atPoint:(vector_float3&)v
+{
+    const simd::float3& eye = _camera.get_position();
+    const simd::float3& dir = _camera.get_view_direction();
+    
+    const rcbVector3D& vc_origin = mop::convertFromSimdToRcb(eye);
+    const rcbUnitVector3D& vc_ray = mop::convertFromSimdToRcb(dir);
+    
+    vector_float4 pp;
+    
+    metalCustomGeometry* g = model.getGeometry;
+    BOOL is_good = [g touchedWithRayOrigin:vc_origin
+                              andDirection:vc_ray
+                                 touchedAt:pp];
+    
+    float distribution = 1.f;
+    
+    if (is_good)
+    {
+        const vector_float3 p = { pp[0], pp[1], pp[2] };
+        
+        float h = simd::distance(eye, p);
+        
+        distribution = 2 * h * tan(VIEW_ANGLE_RAD / 2);
+        NSLog(@"texture scale recalculated: %f", distribution);
+    }
+    else
+    {
+        const simd::float4 eye_ext = {eye[0], eye[1], eye[2], 1.f};
+        Vertex* closest_vertex = [g getClosestTo:eye_ext];
+        const simd::float4 closest_point = closest_vertex->position;
+        float h = simd::distance(eye_ext, closest_point);
+        distribution = 1.75 * h * tan(VIEW_ANGLE_RAD / 2);
+        NSLog(@"recalcuation failed");
+    }
+    
+    vector_float3 step_right = { 0.1f * distribution, 0.f, 0.f };
+    vector_float3 step_left = { -0.1f * distribution, 0.f, 0.f };
+    
+    vector_float3 bind_right = v + step_right;
+    vector_float3 bind_left  = v + step_left;
+    
+    auto purePositions = [Manager collectPositionsFrom:[model getGeometry]];
+    
+    metalCustomTexture* t = [[metalCustomTexture alloc] initWithDevice:_device
+                                                              Vertices:purePositions
+                                                            andPicture:image];
+    
+    [t setBindPoints:bind_right :bind_left];
+    [t transfromTextureWithBindPoints];
+    
+    [model addTexture:t];
+}
+
 - (void)handleMouseTouch:(float)x And:(float)y
 {
-    vector_float4 v;
+    vector_float4 vv;
     
-    NSUInteger index = [self getGeometryAndTouchedPoint:x And:y touchedPoint:v];
+    NSUInteger index = [self getGeometryAndTouchedPoint:x And:y touchedPoint:vv];
+    
+    vector_float3 v = {vv[0], vv[1], vv[2]};
     
     if (index != -1)
     {
@@ -237,49 +293,9 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
         }
         else
         {
+            [self dropTextureOnModel:model withImage:image atPoint:v];
+            
             _catchTexturePoint = YES;
-            
-            const simd::float3& eye = _camera.get_position();
-            const simd::float3& dir = _camera.get_view_direction();
-            
-            const rcbVector3D& vc_origin = mop::convertFromSimdToRcb(eye);
-            const rcbUnitVector3D& vc_ray = mop::convertFromSimdToRcb(dir);
-            vector_float4 p;
-            
-            metalCustomGeometry* g = model.getGeometry;
-            BOOL is_good = [g touchedWithRayOrigin:vc_origin
-                                      andDirection:vc_ray
-                                         touchedAt:p];
-            
-            float distribution = 1.f;
-            
-            if (is_good)
-            {
-                const simd::float3 result = { p[0], p[1], p[2] };
-                
-                float h = simd::distance(eye, result);
-                
-                distribution = 2 * h * tan(VIEW_ANGLE_RAD / 2);
-                NSLog(@"texture scale recalculated: %f", distribution);
-            }
-            
-            vector_float4 step_right = { 0.1f * distribution, 0.f, 0.f, 0.f };
-            vector_float4 step_left = { -0.1f * distribution, 0.f, 0.f, 0.f };
-            
-            vector_float4 bind_right = v + step_right;
-            vector_float4 bind_left  = v + step_left;
-            
-            auto purePositions = [Manager collectPositionsFrom:[model getGeometry]];
-            
-            metalCustomTexture* t = [[metalCustomTexture alloc] initWithDevice:_device
-                                                                      Vertices:purePositions
-                                                                    andPicture:image];
-            
-            [t setBindPoints:bind_right :bind_left];
-            [t transfromTextureWithBindPoints];
-            
-            [model addTexture:t];
-            
         }
     }
 }
