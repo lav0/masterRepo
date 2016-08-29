@@ -23,8 +23,8 @@
                       Vertices:(std::vector<simd::float4>)vertices
                     andPicture:(THEIMAGE*)image;
 
-- (void)transformTextureAccordingWith:(simd::float4&)vertexBase0
-                                   And:(simd::float4&)vertexBase1;
+- (void)setBindPoints:(simd::float4&)bind1 :(simd::float4&)bind2;
+- (void)transfromTextureWithBindPoints;
 
 - (id<MTLBuffer>)bufferCoords;
 - (id<MTLTexture>)dataMipMap;

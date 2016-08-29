@@ -62,14 +62,20 @@
         _bind_point0 = {2.f, 0.f, 0.f, 1.f};
         _bind_point1 = {0.f, 0.f, 0.f, 1.f};
         
-        _caught_point = -1;
-        
         [self transfromTextureWithBindPoints];
+        
+        _caught_point = -1;
         
         _dataMipMap = [MBETextureLoader texture2DWithImage:image device:device];
     }
     
     return self;
+}
+
+- (void)setBindPoints:(simd::float4&)bind0 :(simd::float4&)bind1;
+{
+    _bind_point0 = bind0;
+    _bind_point1 = bind1;
 }
 
 - (bool)catchBindPointBy:(simd::float4)point
@@ -115,6 +121,11 @@
     return _dataMipMap;
 }
 
+- (simd::float2)transformWorld2ModelSurface:(simd::float4&)worldPoint
+{
+    return { worldPoint[0], worldPoint[1] };
+}
+
 - (void)transfromTextureWithBindPoints
 {
     [self transformTextureAccordingWith:_bind_point0 And:_bind_point1];
@@ -126,8 +137,8 @@
     //// pick the base points to determine transformation from vectex system to texture one:
     //// (x,y) -> (u,v)
     //// vertexBase0 -> u0
-    simd::float2 x0 = { vertexBase0[0], vertexBase0[1] };  // these are (x, y)
-    simd::float2 x1 = { vertexBase1[0], vertexBase1[1] };  // coordinates
+    simd::float2 x0 = [self transformWorld2ModelSurface:vertexBase0];  // these are (x, y)
+    simd::float2 x1 = [self transformWorld2ModelSurface:vertexBase1];  // coordinates
     
     simd::float2 u0 = {0.f, 0.f};  // the texture coordinates
     simd::float2 u1 = {1.f, 1.f};  // (u, v)

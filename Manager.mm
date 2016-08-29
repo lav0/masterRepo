@@ -17,6 +17,7 @@
 #include <vector>
 
 static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
+static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
 
 
 @implementation Manager
@@ -56,7 +57,7 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
         _catchTexturePoint = YES;
         
         [self createGeometry:device];
-        [self createTexture:device];
+        //[self createTexture:device];
     }
     
     return self;
@@ -97,7 +98,8 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
         {
             simd::float4 point0 = {0.8f, 0.8f, 0.f, 1.f};
             simd::float4 point1 = {0.0f, 0.0f, 0.f, 1.f};
-            [t transformTextureAccordingWith:point0 And:point1];
+            [t setBindPoints:point0 :point1];
+            [t transfromTextureWithBindPoints];
             
             b = NO;
         }
@@ -109,7 +111,7 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 - (void)recalculateProjectionWithWidth:(CGFloat)width AndHeight:(CGFloat)height
 {
     float aspect = fabs(width / height);
-    _projectionMatrix = matrix_from_perspective_fov_aspectLH(65.0f * (M_PI / 180.0f),
+    _projectionMatrix = matrix_from_perspective_fov_aspectLH(VIEW_ANGLE_RAD,
                                                              aspect,
                                                              DISTANCE_TO_PROJ_SCREEN,
                                                              100.0f
@@ -235,11 +237,46 @@ static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
         }
         else
         {
+            _catchTexturePoint = YES;
+            
+            const simd::float3& eye = _camera.get_position();
+            const simd::float3& dir = _camera.get_view_direction();
+            
+            const rcbVector3D& vc_origin = mop::convertFromSimdToRcb(eye);
+            const rcbUnitVector3D& vc_ray = mop::convertFromSimdToRcb(dir);
+            vector_float4 p;
+            
+            metalCustomGeometry* g = model.getGeometry;
+            BOOL is_good = [g touchedWithRayOrigin:vc_origin
+                                      andDirection:vc_ray
+                                         touchedAt:p];
+            
+            float distribution = 1.f;
+            
+            if (is_good)
+            {
+                const simd::float3 result = { p[0], p[1], p[2] };
+                
+                float h = simd::distance(eye, result);
+                
+                distribution = 2 * h * tan(VIEW_ANGLE_RAD / 2);
+                NSLog(@"texture scale recalculated: %f", distribution);
+            }
+            
+            vector_float4 step_right = { 0.1f * distribution, 0.f, 0.f, 0.f };
+            vector_float4 step_left = { -0.1f * distribution, 0.f, 0.f, 0.f };
+            
+            vector_float4 bind_right = v + step_right;
+            vector_float4 bind_left  = v + step_left;
+            
             auto purePositions = [Manager collectPositionsFrom:[model getGeometry]];
             
             metalCustomTexture* t = [[metalCustomTexture alloc] initWithDevice:_device
                                                                       Vertices:purePositions
                                                                     andPicture:image];
+            
+            [t setBindPoints:bind_right :bind_left];
+            [t transfromTextureWithBindPoints];
             
             [model addTexture:t];
             

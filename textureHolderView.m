@@ -76,13 +76,18 @@
     }
 }
 
-- (void)mouseUp:(NSEvent *)theEvent
+- (void)unpickAllImages
 {
     for (textureView* v in _imageViews)
     {
         [v setIsPicked:NO];
         [v setNeedsDisplay:YES];
     }
+}
+
+- (void)mouseUp:(NSEvent *)theEvent
+{
+    [self unpickAllImages];
 }
 
 - (void)drawRect:(NSRect)dirtyRect {
@@ -99,13 +104,20 @@
 
 - (THEIMAGE*)getActiveImage
 {
+    THEIMAGE* res = nil;
+    
     for (textureView* v in _imageViews)
     {
         if (v.isPicked)
-            return [v image];
+        {
+            res = [v image];
+            break;
+        }
     }
     
-    return nil;
+    [self unpickAllImages];
+    
+    return res;
 }
 
 @end
