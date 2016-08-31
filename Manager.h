@@ -20,9 +20,6 @@
 - (void)recalculateProjectionWithWidth:(CGFloat)width AndHeight:(CGFloat)height;
 
 - (void)update;
-//
-//- (bool)getNextGeometry:(id<metalGeometryProviderProtocol>*)geometry
-//             andTexture:(id<metalTextureProviderProtocol>*)texture;
 
 - (metalModel*)getNextModel;
 

@@ -24,6 +24,7 @@ public:
     void updateModelTransformation(matrix_float4x4* trs);
     
     Vertex* getClosestTo(const simd::float4& aim) const;
+    Vertex* getClosestTo(const simd::float3& aim) const;
     
     bool intersectionWithRay(const rcbVector3D&     ray_origin,
                              const rcbUnitVector3D& ray_direction,

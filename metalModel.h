@@ -17,7 +17,8 @@ const unsigned MAX_TEXTURES_PER_GEOMETRY = 3;
 
 - (instancetype)initWithGeometry:(metalCustomGeometry*)g;
 
-- (bool)addTexture:(metalCustomTexture*)t;
+- (BOOL)addTexture:(metalCustomTexture*)t;
+- (BOOL)contains:(metalCustomTexture*)t;
 
 - (id<metalGeometryProviderProtocol>)getGeometry;
 - (id<metalTextureProviderProtocol>)getNextTexture;

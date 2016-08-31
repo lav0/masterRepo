@@ -36,7 +36,8 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     
     NSMutableArray* _touchedItems;
     
-    bool _catchTexturePoint;
+    bool                _catchTexturePoint;
+    metalCustomTexture* _lastCaughtTexture;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -55,6 +56,7 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
         _rotation = 0.f;
         _nextGeometryIndex = 0;
         _catchTexturePoint = YES;
+        _lastCaughtTexture = nil;
         
         [self createGeometry:device];
         //[self createTexture:device];
@@ -185,39 +187,53 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     return -1;
 }
 
-- (void)catchAndReplace:(metalCustomTexture*)t onModel:(metalModel*)model withPoint:(vector_float3)v
+- (BOOL)catchTextureOnModel:(metalModel*)model atPoint:(const vector_float3&)v
 {
+    metalCustomTexture* t = [model getNextTexture];
+    
     while (nil != t)
     {
-        if (_catchTexturePoint)
+        if ([t catchBindPointBy:v])
         {
-            if ([t catchBindPointBy:v])
-            {
-                NSLog(@"Caught");
-                _catchTexturePoint = NO;
-                [_touchedItems removeAllObjects];
-                [_touchedItems addObject:model];
-                
-                break;
-                
-            } else {
-                NSLog(@"Missed"); }
-        }
-        else
-        {
-            NSLog(@"Replacing");
-            if ([_touchedItems containsObject:model])
-            {
-                [t changeCaughtBindPointWith:v];
-                _catchTexturePoint = YES;
-            }
+            NSLog(@"Caught");
+            _catchTexturePoint = NO;
+            [_touchedItems removeAllObjects];
+            [_touchedItems addObject:model];
             
+            _lastCaughtTexture = t;
+            
+            return YES;
         }
+        
         t = [model getNextTexture];
     }
+    NSLog(@"Missed");
+    return NO;
 }
 
-- (void)dropTextureOnModel:(metalModel*)model withImage:(THEIMAGE*)image atPoint:(vector_float3&)v
+- (BOOL)replaceTexture:(metalCustomTexture*)t OnModel:(metalModel*)model atPoint:(const vector_float3&)point
+{
+    if ([_touchedItems containsObject:model])
+    {
+        if ([model contains:t])
+        {
+            NSLog(@"Replacing");
+            
+            [t changeCaughtBindPointWith:point];
+            _catchTexturePoint = YES;
+            _lastCaughtTexture = nil;
+            
+            return YES;
+        }
+    }
+    
+    return NO;
+}
+
+- (void)determineTextureBindPointFor:(metalModel*)model
+                             atPoint:(const vector_float3&)v
+                          bindPoint1:(vector_float3&)bind_out1
+                          bindPoint2:(vector_float3&)bind_out2
 {
     const simd::float3& eye = _camera.get_position();
     const simd::float3& dir = _camera.get_view_direction();
@@ -225,30 +241,26 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     const rcbVector3D& vc_origin = mop::convertFromSimdToRcb(eye);
     const rcbUnitVector3D& vc_ray = mop::convertFromSimdToRcb(dir);
     
-    vector_float4 pp;
+    vector_float4 the_point;
     
     metalCustomGeometry* g = model.getGeometry;
     BOOL is_good = [g touchedWithRayOrigin:vc_origin
                               andDirection:vc_ray
-                                 touchedAt:pp];
+                                 touchedAt:the_point];
     
     float distribution = 1.f;
     
     if (is_good)
     {
-        const vector_float3 p = { pp[0], pp[1], pp[2] };
-        
-        float h = simd::distance(eye, p);
+        float h = simd::distance(eye, the_point.xyz);
         
         distribution = 2 * h * tan(VIEW_ANGLE_RAD / 2);
         NSLog(@"texture scale recalculated: %f", distribution);
     }
     else
     {
-        const simd::float4 eye_ext = {eye[0], eye[1], eye[2], 1.f};
-        Vertex* closest_vertex = [g getClosestTo:eye_ext];
-        const simd::float4 closest_point = closest_vertex->position;
-        float h = simd::distance(eye_ext, closest_point);
+        Vertex* closest_vertex = [g getClosestToAim3D:eye];
+        float h = simd::distance(eye, closest_vertex->position.xyz);
         distribution = 1.75 * h * tan(VIEW_ANGLE_RAD / 2);
         NSLog(@"recalcuation failed");
     }
@@ -256,8 +268,15 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     vector_float3 step_right = { 0.1f * distribution, 0.f, 0.f };
     vector_float3 step_left = { -0.1f * distribution, 0.f, 0.f };
     
-    vector_float3 bind_right = v + step_right;
-    vector_float3 bind_left  = v + step_left;
+    bind_out1 = v + step_right;
+    bind_out2 = v + step_left;
+}
+
+- (void)dropTextureOnModel:(metalModel*)model withImage:(THEIMAGE*)image atPoint:(const vector_float3&)v
+{
+    vector_float3 bind_right, bind_left;
+    
+    [self determineTextureBindPointFor:model atPoint:v bindPoint1:bind_right bindPoint2:bind_left];
     
     auto purePositions = [Manager collectPositionsFrom:[model getGeometry]];
     
@@ -273,31 +292,40 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
 
 - (void)handleMouseTouch:(float)x And:(float)y
 {
-    vector_float4 vv;
+    vector_float4 point;
     
-    NSUInteger index = [self getGeometryAndTouchedPoint:x And:y touchedPoint:vv];
+    NSUInteger index = [self getGeometryAndTouchedPoint:x And:y touchedPoint:point];
     
-    vector_float3 v = {vv[0], vv[1], vv[2]};
+    vector_float3 point3d = point.xyz;
     
     if (index != -1)
     {
         metalModel* model = [_theModels objectAtIndex:index];
         
-        metalCustomTexture* t = [model getNextTexture];
-        
         NSImage* image = [_imageProvider getActiveImage];
         
-        if (nil == image)
+        if (nil != image)
         {
-            [self catchAndReplace:t onModel:model withPoint:v];
+            [self dropTextureOnModel:model withImage:image atPoint:point3d];
+            
         }
         else
         {
-            [self dropTextureOnModel:model withImage:image atPoint:v];
-            
-            _catchTexturePoint = YES;
+            if (nil == _lastCaughtTexture)
+            {
+                if ([self catchTextureOnModel:model atPoint:point3d])
+                {
+                    return;
+                }
+            }
+            else
+            {
+                [self replaceTexture:_lastCaughtTexture OnModel:model atPoint:point3d];
+            }
         }
     }
+    
+    _lastCaughtTexture = nil;
 }
 
 - (void)handleMouseMove:(float)x And:(float)y With:(float)x2 And:(float)y2

@@ -28,7 +28,7 @@
     return self;
 }
 
-- (bool)addTexture:(metalCustomTexture*)t
+- (BOOL)addTexture:(metalCustomTexture*)t
 {
     if ([_arrTextures count] >= MAX_TEXTURES_PER_GEOMETRY)
         return NO;
@@ -36,6 +36,11 @@
     [_arrTextures addObject:t];
  
     return YES;
+}
+
+- (BOOL)contains:(metalCustomTexture*)t
+{
+    return [_arrTextures containsObject:t];
 }
 
 - (id<metalGeometryProviderProtocol>)getGeometry

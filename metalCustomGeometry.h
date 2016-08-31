@@ -31,7 +31,8 @@
                 andDirection:(const rcbUnitVector3D&)direction
                    touchedAt:(vector_float4&)result;
 
-- (Vertex*)getClosestTo:(const simd::float4&)aim;
+- (Vertex*)getClosestToAim4D:(const simd::float4&)aim;
+- (Vertex*)getClosestToAim3D:(const simd::float3&)aim;
 
 @end
 

@@ -152,7 +152,14 @@ static const IndexType indexData[] =
     return _indexBuffer;
 }
 
-- (Vertex*)getClosestTo:(const simd::float4&)aim
+- (Vertex*)getClosestToAim4D:(const simd::float4&)aim
+{
+    if (nullptr != _linkedGeo)
+        return _linkedGeo->getClosestTo(aim);
+    
+    return nullptr;
+}
+- (Vertex*)getClosestToAim3D:(const simd::float3&)aim
 {
     if (nullptr != _linkedGeo)
         return _linkedGeo->getClosestTo(aim);

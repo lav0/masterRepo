@@ -112,3 +112,24 @@ Vertex* linkedGeometry::getClosestTo(const simd::float4& aim) const
     
     return closest;
 }
+
+//======================================================================================
+Vertex* linkedGeometry::getClosestTo(const simd::float3& aim) const
+{
+    float min_dist = __FLT_MAX__;
+    Vertex* closest = nullptr;
+    
+    for (auto v : m_pVertices)
+    {
+        auto v3d = v->position.xyz;
+        auto d = simd::distance_squared(v3d, aim);
+        
+        if (min_dist > d)
+        {
+            min_dist = d;
+            closest = v;
+        }
+    }
+    
+    return closest;
+}
