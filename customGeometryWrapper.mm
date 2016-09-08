@@ -13,15 +13,10 @@ struct customGeometryWrapper
     metalCustomGeometry* wrapped;
 };
 
-CustomGeometry::CustomGeometry(EntitiesFactoryWrapper& factory_wrapper)
+CustomGeometry::CustomGeometry(EntitiesFactoryWrapper& factory_wrapper, GeometryUnit gu)
 : _pImpl(new customGeometryWrapper)
 {
-    NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
-    
-    if (gridURL == nil)
-        NSLog(@"Sorry. File not found");
-    
-    _pImpl->wrapped = [factory_wrapper.factory createGeometry:GeometryUnit::GRID];
+    _pImpl->wrapped = [factory_wrapper.factory createGeometry:gu];
 }
 
 CustomGeometry::~CustomGeometry()

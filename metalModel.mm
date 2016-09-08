@@ -7,21 +7,23 @@
 //
 
 #import "metalModel.h"
+#include <memory>
 
 @implementation metalModel
 {
     metalCustomGeometry* _geometry;
-    
+    std::unique_ptr<CustomGeometry> _geometryCpp;
     
     NSMutableArray* _arrTextures;
     NSUInteger      _iterTextures;
 }
 
-- (instancetype)initWithGeometry:(metalCustomGeometry*)g
+- (instancetype)initWithGeometry:(CustomGeometry*)g
 {
     if (self = [super init])
     {
-        _geometry = g;
+        //_geometry = g;
+        _geometryCpp = std::unique_ptr<CustomGeometry>(new CustomGeometry(*g));
         
         _arrTextures = [[NSMutableArray alloc] init];
         _iterTextures = 0;
@@ -44,9 +46,9 @@
     return [_arrTextures containsObject:t];
 }
 
-- (id<metalGeometryProviderProtocol>)getGeometry
+- (CustomGeometry*)getGeometry
 {
-    return _geometry;
+    return _geometryCpp.get();
 }
 
 - (id<metalTextureProviderProtocol>)getNextTexture

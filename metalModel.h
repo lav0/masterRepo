@@ -8,19 +8,21 @@
 
 #import <Metal/Metal.h>
 
-#import "metalCustomGeometry.h"
+#include "customGeometryWrapper.h"
+//#import "metalCustomGeometry.h"
 #import "metalCustomTexture.h"
 
 const unsigned MAX_TEXTURES_PER_GEOMETRY = 3;
 
 @interface metalModel : NSObject
 
-- (instancetype)initWithGeometry:(metalCustomGeometry*)g;
+//- (instancetype)initWithGeometry:(metalCustomGeometry*)g;
+- (instancetype)initWithGeometry:(CustomGeometry*)g;
 
 - (BOOL)addTexture:(metalCustomTexture*)t;
 - (BOOL)contains:(metalCustomTexture*)t;
 
-- (id<metalGeometryProviderProtocol>)getGeometry;
+- (CustomGeometry*)getGeometry;
 - (id<metalTextureProviderProtocol>)getNextTexture;
 
 @end

@@ -18,7 +18,7 @@ class CustomGeometry
 {
 public:
     
-    CustomGeometry(EntitiesFactoryWrapper& factory_wrapper);
+    CustomGeometry(EntitiesFactoryWrapper& factory_wrapper, GeometryUnit gu);
     virtual ~CustomGeometry();
     
     void update();

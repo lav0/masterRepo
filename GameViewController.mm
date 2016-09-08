@@ -18,7 +18,7 @@
 #include "Camera.hpp"
 
 #include <vector>
-
+#include <unordered_map>
 
 @implementation GameViewController
 {
@@ -29,6 +29,8 @@
     Renderer* _renderer;
     
     Manager* _manager;
+    
+    std::unordered_map<void*, metalCustomGeometry*> ggg;
 }
 
 - (void)viewDidLoad
@@ -78,7 +80,19 @@
             t = [curModel getNextTexture];
         }
         
-        [_renderer drawWithGeometry:[curModel getGeometry]];
+        CustomGeometry* geoCpp = [curModel getGeometry];
+        void* raw = geoCpp->getMetalGeometry();
+        
+        auto itr = ggg.find(raw);
+        
+        if (itr == ggg.end())
+        {
+            metalCustomGeometry* g = (metalCustomGeometry *)CFBridgingRelease(raw);
+            auto pair = ggg.emplace(raw, g);
+            itr = pair.first;
+        }
+        
+        [_renderer drawWithGeometry:itr->second];
         
         curModel = [_manager getNextModel];
     }

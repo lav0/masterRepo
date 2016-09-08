@@ -43,7 +43,8 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     metalCustomTexture* _lastCaughtTexture;
     
     ///
-    std::unique_ptr<CustomGeometry> geom_cpp;
+    std::unique_ptr<CustomGeometry> geom_cpp1;
+    std::unique_ptr<CustomGeometry> geom_cpp2;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -75,17 +76,18 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
 {
     EntitiesFactoryWrapper factory_wrapper;
     factory_wrapper.factory = [[EntitiesFactory alloc] initWithDevice:device];
+//    
+//    metalCustomGeometry* g1 = [factory_wrapper.factory createGeometry:GeometryUnit::QUADRO];
+//    metalCustomGeometry* g2 = [factory_wrapper.factory createGeometry:GeometryUnit::GRID];
+//    
+    geom_cpp1 = std::unique_ptr<CustomGeometry>(new CustomGeometry(factory_wrapper, GeometryUnit::QUADRO));
+    geom_cpp2 = std::unique_ptr<CustomGeometry>(new CustomGeometry(factory_wrapper, GeometryUnit::GRID));
     
-    metalCustomGeometry* g1 = [factory_wrapper.factory createGeometry:GeometryUnit::QUADRO];
-    metalCustomGeometry* g2 = [factory_wrapper.factory createGeometry:GeometryUnit::GRID];
+    geom_cpp1->setSpacePosition3D((vector_float3){2.f, 0.f, 0.f});
+    geom_cpp2->setSpacePosition3D((vector_float3){-2.f, 0.f, 0.f});
     
-    geom_cpp = std::unique_ptr<CustomGeometry>(new CustomGeometry(factory_wrapper));
-    
-    [g1 setSpacePosition3D:(vector_float3){2.f, 0.f, 0.f}];
-    [g2 setSpacePosition3D:(vector_float3){-2.f, 0.f, 0.f}];
-    
-    [_theModels addObject:[[metalModel alloc] initWithGeometry:g2]];
-    [_theModels addObject:[[metalModel alloc] initWithGeometry:g1]];
+    [_theModels addObject:[[metalModel alloc] initWithGeometry:geom_cpp1.get()]];
+    [_theModels addObject:[[metalModel alloc] initWithGeometry:geom_cpp2.get()]];
 }
 
 - (void)createTexture:(id<MTLDevice>)device
@@ -130,13 +132,11 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     
     for (metalModel* model in _theModels)
     {
-        metalCustomGeometry* g = [model getGeometry];
+        auto* g = [model getGeometry];
         
-        [g setViewProjection:&viewProj];
-        [g update];
+        g->setViewProjection(&viewProj);
+        g->update();
     }
-    
-    geom_cpp->setViewProjection(&viewProj);
 }
 
 - (rcbVector3D)converToScreenPoint:(float)x And:(float)y
@@ -172,22 +172,15 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     rcbVector3D vc_world = [self converToScreenPoint:x And:y];
     rcbUnitVector3D ray_direction = vc_world - eye_position;
     
-    /// temporary 
-    {
-        NSLog(@"touched with ray");
-        vector_float4 v;
-        geom_cpp->touchedWithRayOrigin(eye_position, ray_direction, v);
-    }
-    
     for (metalModel* model in _theModels)
     {
-        metalCustomGeometry* g = [model getGeometry];
+        CustomGeometry* g = [model getGeometry];
         
         vector_float4 touched_p;
         
-        BOOL is_good = [g touchedWithRayOrigin:eye_position
-                                  andDirection:ray_direction
-                                     touchedAt:touched_p];
+        BOOL is_good = g->touchedWithRayOrigin(eye_position
+                                  ,ray_direction
+                                     ,touched_p);
         
         if (is_good)
         {
@@ -255,10 +248,10 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     
     vector_float4 the_point;
     
-    metalCustomGeometry* g = model.getGeometry;
-    BOOL is_good = [g touchedWithRayOrigin:vc_origin
-                              andDirection:vc_ray
-                                 touchedAt:the_point];
+    CustomGeometry* g = model.getGeometry;
+    BOOL is_good = g->touchedWithRayOrigin(vc_origin,
+                                vc_ray,
+                                 the_point);
     
     float distribution = 1.f;
     
@@ -271,10 +264,7 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     }
     else
     {
-        geom_cpp->getClosestToAim3D(eye);
-        geom_cpp->vertexCount();
-        
-        Vertex* closest_vertex = [g getClosestToAim3D:eye];
+        Vertex* closest_vertex = g->getClosestToAim3D(eye);
         float h = simd::distance(eye, closest_vertex->position.xyz);
         distribution = 1.75 * h * tan(VIEW_ANGLE_RAD / 2);
         NSLog(@"recalcuation failed");
@@ -392,13 +382,14 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
 {
     for (metalModel* model in _touchedItems)
     {
-        metalCustomGeometry* touched = [model getGeometry];
-        [touched update];
+        CustomGeometry* touched = [model getGeometry];
+        touched->update();
+        
+//        metalCustomGeometry* touched = [model getGeometry];
+//        [touched update];
     }
     
     _rotation += 0.05f;
-    
-    geom_cpp->update();
 }
 
 - (metalModel*)getNextModel
@@ -413,17 +404,27 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     return [_theModels objectAtIndex:_nextGeometryIndex++];
 }
 
-+ (std::vector<simd::float4>)collectPositionsFrom:(id<metalGeometryProviderProtocol>)provider
++ (std::vector<simd::float4>)collectPositionsFrom:(CustomGeometry*)geometry  //(id<metalGeometryProviderProtocol>)provider
 {
+    auto size = geometry->vertexCount();
+    
     std::vector<simd::float4> purePositions;
-    purePositions.reserve(provider.vertexCount);
+    purePositions.reserve(size);
     
-    simd::float4* v = (simd::float4*) [provider.vertexBuffer contents];
+    Vertex* ver = geometry->getBufferContent();
     
-    for (auto i=0; i < 2 * provider.vertexCount; i += 2)
+    for (decltype(size) i = 0; i < size; ++i)
     {
-        purePositions.push_back(v[i]);
+        purePositions.push_back(ver[i].position);
     }
+//    
+//    
+//    simd::float4* v = (simd::float4*) [provider.vertexBuffer contents];
+//    
+//    for (auto i=0; i < 2 * provider.vertexCount; i += 2)
+//    {
+//        purePositions.push_back(v[i]);
+//    }
     
     return purePositions;
 }
