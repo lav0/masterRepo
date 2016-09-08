@@ -30,6 +30,7 @@ static const IndexType indexData[] =
     id<MTLBuffer> _uniformBuffer;
     id<MTLBuffer> _indexBuffer;
     
+    std::unique_ptr<spacePosition3D> _spacePosition3D;
     matrix_float4x4 _viewProjectionMatrix;
     
     linkedGeometry* _linkedGeo;
@@ -46,6 +47,9 @@ static const IndexType indexData[] =
         
         _uniformBuffer = [device newBufferWithLength:sizeof(uniforms_t) options:0];
         
+        vector_float3 v = {0.f, 0.f, 0.f};
+        _spacePosition3D = std::unique_ptr<spacePosition3D>(new spacePosition3D(v));
+        
         [self linkGeometryAndBuffers:_vertexCount :_indexCount];
     }
     
@@ -60,6 +64,9 @@ static const IndexType indexData[] =
         [self loadModel:device from:source];
         
         _uniformBuffer = [device newBufferWithLength:sizeof(uniforms_t) options:0];
+        
+        vector_float3 v = {0.f, 0.f, 0.f};
+        _spacePosition3D = std::unique_ptr<spacePosition3D>(new spacePosition3D(v));
         
         [self linkGeometryAndBuffers:_vertexCount :_indexCount];
     }
@@ -99,7 +106,7 @@ static const IndexType indexData[] =
 {
     uniforms_t *content = (uniforms_t*)[_uniformBuffer contents];
     
-    matrix_float4x4 model = [self.spacePosition getTransformation];
+    matrix_float4x4 model = _spacePosition3D->getTransformation();
     
     content->normal_matrix = matrix_invert(matrix_transpose(model));
     content->modelview_projection_matrix = matrix_multiply(_viewProjectionMatrix, model);
@@ -122,19 +129,13 @@ static const IndexType indexData[] =
     return _indexCount;
 }
 
-@synthesize spacePosition = _position;
-- (metal3DPosition*)spacePosition
+- (spacePosition3D)spacePosition3D
 {
-    if (_position == nil)
-    {
-        _position = [[metal3DPosition alloc] initAtPoint:(vector_float3){0.f, 0.f, 0.f}];
-    }
-    
-    return _position;
+    return *(_spacePosition3D.get());
 }
-- (void)setSpacePosition:(metal3DPosition *)position
+- (void)setSpacePosition3D:(const spacePosition3D&)position
 {
-    _position = position;
+    *(_spacePosition3D.get()) = position;
 }
 
 - (id<MTLBuffer>)vertexBuffer
@@ -171,7 +172,7 @@ static const IndexType indexData[] =
                 andDirection:(const rcbUnitVector3D&)direction
                    touchedAt:(vector_float4&)result
 {
-    auto trs = [self.spacePosition getTransformation];
+    auto trs = _spacePosition3D->getTransformation();
     _linkedGeo->updateModelTransformation(&trs);
     
     rcbVector3D vc;

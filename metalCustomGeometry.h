@@ -9,19 +9,21 @@
 
 #import "SharedStructures.h"
 #import "metalGeometryProviderProtocol.h"
-#import "metal3DPosition.h"
 
+#include "spacePosition3D.hpp"
 #include "external/rcbUnitVector3D.h"
 
 
 @interface metalCustomGeometry : NSObject<metalGeometryProviderProtocol>
 
-@property (strong, nonatomic) metal3DPosition *spacePosition;
 @property (assign, nonatomic, readonly) size_t vertexCount;
 @property (assign, nonatomic, readonly) size_t indexCount;
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device;
 - (instancetype)initWithDevice:(id<MTLDevice>)device andLoadFrom:(NSURL*)source;
+
+- (spacePosition3D)spacePosition3D;
+- (void)setSpacePosition3D:(const spacePosition3D&)position;
 
 - (void)update;
 - (void)setViewProjection:(matrix_float4x4*)viewProjection;

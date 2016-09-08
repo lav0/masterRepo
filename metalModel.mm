@@ -12,6 +12,7 @@
 {
     metalCustomGeometry* _geometry;
     
+    
     NSMutableArray* _arrTextures;
     NSUInteger      _iterTextures;
 }

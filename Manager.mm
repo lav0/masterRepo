@@ -8,13 +8,16 @@
 
 #import "Manager.h"
 #import "metalGPBlueBox.h"
+#import "EntitiesFactory.h"
 
 #include "Camera.hpp"
+#include "customGeometryWrapper.h"
 #include "convertFunctionsRcb.h"
 #include "external/rcbPlaneForScreen.h"
 #include "external/rcbSphere.h"
 
 #include <vector>
+#include <memory>
 
 static const float DISTANCE_TO_PROJ_SCREEN = 1.f;
 static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
@@ -38,6 +41,9 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     
     bool                _catchTexturePoint;
     metalCustomTexture* _lastCaughtTexture;
+    
+    ///
+    std::unique_ptr<CustomGeometry> geom_cpp;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -67,19 +73,16 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
 
 - (void)createGeometry:(id<MTLDevice>)device
 {
-    metal3DPosition* position1 = [[metal3DPosition alloc] initAtPoint:(vector_float3){2.f, 0.f, 0.f}];
-    metal3DPosition* position2 = [[metal3DPosition alloc] initAtPoint:(vector_float3){-2.f, 0.f, 0.f}];
+    EntitiesFactoryWrapper factory_wrapper;
+    factory_wrapper.factory = [[EntitiesFactory alloc] initWithDevice:device];
     
-    NSURL *quadroURL = [[NSBundle mainBundle] URLForResource:@"quadro_grid" withExtension:@"obj"];
-    NSURL *gridURL = [[NSBundle mainBundle] URLForResource:@"sgrid" withExtension:@"obj"];
-    if (quadroURL == nil || gridURL == nil)
-        NSLog(@"Sorry. File not found");
+    metalCustomGeometry* g1 = [factory_wrapper.factory createGeometry:GeometryUnit::QUADRO];
+    metalCustomGeometry* g2 = [factory_wrapper.factory createGeometry:GeometryUnit::GRID];
     
-    metalCustomGeometry* g1 = [[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:quadroURL];
-    metalCustomGeometry* g2 = [[metalCustomGeometry alloc] initWithDevice:device andLoadFrom:gridURL];
+    geom_cpp = std::unique_ptr<CustomGeometry>(new CustomGeometry(factory_wrapper));
     
-    [g1 setSpacePosition:position1];
-    [g2 setSpacePosition:position2];
+    [g1 setSpacePosition3D:(vector_float3){2.f, 0.f, 0.f}];
+    [g2 setSpacePosition3D:(vector_float3){-2.f, 0.f, 0.f}];
     
     [_theModels addObject:[[metalModel alloc] initWithGeometry:g2]];
     [_theModels addObject:[[metalModel alloc] initWithGeometry:g1]];
@@ -132,6 +135,8 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
         [g setViewProjection:&viewProj];
         [g update];
     }
+    
+    geom_cpp->setViewProjection(&viewProj);
 }
 
 - (rcbVector3D)converToScreenPoint:(float)x And:(float)y
@@ -166,6 +171,13 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     
     rcbVector3D vc_world = [self converToScreenPoint:x And:y];
     rcbUnitVector3D ray_direction = vc_world - eye_position;
+    
+    /// temporary 
+    {
+        NSLog(@"touched with ray");
+        vector_float4 v;
+        geom_cpp->touchedWithRayOrigin(eye_position, ray_direction, v);
+    }
     
     for (metalModel* model in _theModels)
     {
@@ -259,6 +271,9 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     }
     else
     {
+        geom_cpp->getClosestToAim3D(eye);
+        geom_cpp->vertexCount();
+        
         Vertex* closest_vertex = [g getClosestToAim3D:eye];
         float h = simd::distance(eye, closest_vertex->position.xyz);
         distribution = 1.75 * h * tan(VIEW_ANGLE_RAD / 2);
@@ -382,6 +397,8 @@ static const float VIEW_ANGLE_RAD = 65.0f * (M_PI / 180.0f);
     }
     
     _rotation += 0.05f;
+    
+    geom_cpp->update();
 }
 
 - (metalModel*)getNextModel

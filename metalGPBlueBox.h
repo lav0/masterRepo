@@ -7,21 +7,13 @@
 //
 
 #import "metalGeometryProviderProtocol.h"
-#import "metal3DPosition.h"
+
 
 @interface metalGPBlueBox : NSObject<metalGeometryProviderProtocol>
 
-@property (strong, nonatomic) metal3DPosition *spacePosition;
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device;
-- (instancetype)initWithDevice:(id<MTLDevice>)device andPosition:(metal3DPosition*)position;
+
 - (MTLVertexDescriptor*)vertexDescriptor;
-
-- (id<MTLBuffer>)vertexBuffer;
-- (id<MTLBuffer>)uniformBuffer;
-- (id<MTLBuffer>)indexBuffer;
-- (size_t)indexCount;
-
-- (void)setViewProjection:(matrix_float4x4*)viewProjection;
 
 @end

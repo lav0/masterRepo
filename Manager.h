@@ -11,6 +11,7 @@
 #import "metalModel.h"
 #import "touchHandlerProtocol.h"
 #import "imageProviderProtocol.h"
+//#import "EntitiesFactory.h"
 
 @interface Manager : NSObject<touchHandlerProtocol>
 
